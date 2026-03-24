@@ -26,6 +26,8 @@ async def save_price(
         fetched_at=fetched.fetched_at,
         validation_status=validation_status,
     )
+    if record.buy_price is not None and record.sell_price is not None:
+        record.spread = record.sell_price - record.buy_price
     session.add(record)
     await session.flush()
     return record

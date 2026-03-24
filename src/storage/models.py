@@ -25,6 +25,7 @@ class PriceRecord(Base):
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+    spread: Mapped[float | None] = mapped_column(Float, nullable=True)
     validation_status: Mapped[str] = mapped_column(String(20), default="valid")
 
     __table_args__ = (
