@@ -239,3 +239,45 @@ async def get_macro_data():
         }
     except Exception:
         return {"fx_trend": None, "gold_trend": None, "dxy": None}
+
+
+@router.get("/partials/macro")
+async def get_macro_partial(request: Request):
+    try:
+        db_path = _get_db_path()
+        from src.analysis.macro import calculate_fx_trend, calculate_gold_trend
+
+        fx_trend = await asyncio.to_thread(calculate_fx_trend, db_path)
+        gold_trend = await asyncio.to_thread(calculate_gold_trend, db_path)
+
+        dxy_value = None
+        async with async_session() as session:
+            from sqlalchemy import select
+            from src.storage.models import PriceRecord
+
+            stmt = (
+                select(PriceRecord)
+                .where(PriceRecord.product_type == "dxy")
+                .order_by(PriceRecord.timestamp.desc())
+                .limit(1)
+            )
+            result = await session.execute(stmt)
+            record = result.scalar_one_or_none()
+            if record and record.price_usd:
+                dxy_value = record.price_usd
+
+        return templates.TemplateResponse(
+            request,
+            "partials/macro_card.html",
+            context={
+                "fx_trend": fx_trend,
+                "gold_trend": gold_trend,
+                "dxy": dxy_value,
+            },
+        )
+    except Exception:
+        return templates.TemplateResponse(
+            request,
+            "partials/macro_card.html",
+            context={"fx_trend": None, "gold_trend": None, "dxy": None},
+        )
