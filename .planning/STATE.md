@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Completed 02-02-PLAN.md
-last_updated: "2026-03-24T18:44:33.267Z"
+status: Phase complete — ready for verification
+stopped_at: Completed 02-03-PLAN.md
+last_updated: "2026-03-24T18:50:22.254Z"
 progress:
   total_phases: 9
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -49,6 +49,7 @@ Plan: 3 of 3
 | Phase 01 P02 | 5min | 2 tasks | 8 files |
 | Phase 01 P03 | 5min | 2 tasks | 8 files |
 | Phase 02 P02 | 5min | 2 tasks | 5 files |
+| Phase 02 P03 | 5min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,10 @@ Recent decisions affecting current work:
 - [Phase 02]: Static HTML scraper pattern: httpx+BS4 for DOJI/PhuQuy, Playwright deferred for JS-rendered sites
 - [Phase 02]: SJC/PNJ: use httpx JSON APIs instead of Playwright — all 4 dealers now use httpx pattern
 - [Phase 02]: API discovery: inspect page JS source (goldprice.js, Next.js chunks) to find hidden endpoints
+- [Phase 02]: BTMC JSON API unreachable from outside VN — implemented HTML table fallback at /Home/BGiaVang
+- [Phase 02]: HTML prices in thousands VND/chỉ — multiply by 10,000 for VND/lượng (same convention as PNJ)
+- [Phase 02]: Both VRTL bar and SJC bar from BTMC mapped to product_type='sjc_bar'
+- [Phase 02]: Spread computed as sell - buy, None when either price is missing
 
 ### Pending Todos
 
@@ -84,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T18:44:33.265Z
-Stopped at: Completed 02-02-PLAN.md
+Last session: 2026-03-24T18:50:22.251Z
+Stopped at: Completed 02-03-PLAN.md
 Resume file: None

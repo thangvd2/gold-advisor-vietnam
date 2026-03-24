@@ -54,7 +54,7 @@ Plans:
 Plans:
 - [x] 02-01-PLAN.md — Static HTML scrapers for DOJI & Phu Quý (httpx + BeautifulSoup)
 - [x] 02-02-PLAN.md — Playwright scrapers for SJC & PNJ (JS-rendered sites)
-- [ ] 02-03-PLAN.md — BTMC API scraper, spread storage, full pipeline verification
+- [x] 02-03-PLAN.md — BTMC API scraper, spread storage, full pipeline verification
 
 ### Phase 3: Gap Analysis & Price Charts
 **Goal**: Users can see the SJC-international price gap with historical context (1W/1M/3M/1Y) and visual price charts for all gold products

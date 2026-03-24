@@ -13,7 +13,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DATA-02**: User can see live nhẫn trơn (ring gold) buy/sell prices from dealers
 - [x] **DATA-03**: User can see international gold price (XAUUSD) displayed in both USD and VND
 - [ ] **DATA-04**: User can see SJC-international price gap displayed in VND and as percentage, with historical trend (1W/1M/3M/1Y)
-- [ ] **DATA-05**: User can see buy/sell spread for SJC bars and ring gold at each dealer
+- [x] **DATA-05**: User can see buy/sell spread for SJC bars and ring gold at each dealer
 - [x] **DATA-06**: System validates prices across sources and flags stale, missing, or anomalous data
 - [ ] **DATA-07**: User can view price charts for SJC bars, ring gold, and international gold across 1D/1W/1M/1Y timeframes
 
@@ -79,7 +79,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-02 | Phase 2 | Complete |
 | DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 3 | Pending |
-| DATA-05 | Phase 2 | Pending |
+| DATA-05 | Phase 2 | Complete |
 | DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 3 | Pending |
 | SIG-01 | Phase 4 | Pending |
