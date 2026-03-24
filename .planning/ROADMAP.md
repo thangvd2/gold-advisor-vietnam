@@ -38,7 +38,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 Plans:
 - [x] 01-01-PLAN.md — FastAPI app scaffold, SQLite database models, config, health endpoint
 - [x] 01-02-PLAN.md — Gold price fetcher (yfinance), USD/VND FX fetcher (Vietcombank), repository layer
-- [ ] 01-03-PLAN.md — Data quality checks, APScheduler integration, quality API, end-to-end pipeline
+- [x] 01-03-PLAN.md — Data quality checks, APScheduler integration, quality API, end-to-end pipeline
 
 ### Phase 2: Vietnamese Gold Price Scraping
 **Goal**: System reliably scrapes buy/sell prices from 5+ Vietnamese gold dealers for SJC bars, ring gold (nhẫn trơn), and dealer buy/sell spreads, on a 1-5 minute schedule
