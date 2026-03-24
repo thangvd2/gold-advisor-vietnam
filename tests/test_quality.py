@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, PropertyMock
 
 from src.ingestion.models import FetchedPrice
 from src.config import Settings
@@ -197,15 +197,25 @@ class TestCheckMissing:
 
 
 class TestFetchAndStore:
+    def _mock_gold_fetcher(self, return_value=None, side_effect=None):
+        fetcher = AsyncMock()
+        fetcher.source_name = "yfinance"
+        if side_effect:
+            fetcher.fetch.side_effect = side_effect
+        else:
+            fetcher.fetch.return_value = return_value or []
+        return fetcher
+
     @pytest.mark.asyncio
     async def test_pipeline_orchestrates_end_to_end(self, db_session, settings):
         """fetch → FX convert → save → quality check → return status."""
         from src.ingestion.normalizer import fetch_and_store
 
-        gold_fetcher = AsyncMock()
-        gold_fetcher.fetch.return_value = [
-            _make_fetched_price(price_usd=2650.0, currency="USD"),
-        ]
+        gold_fetcher = self._mock_gold_fetcher(
+            return_value=[
+                _make_fetched_price(price_usd=2650.0, currency="USD"),
+            ]
+        )
 
         fx_fetcher = AsyncMock()
         fx_fetcher.fetch.return_value = [
@@ -229,8 +239,7 @@ class TestFetchAndStore:
         from src.ingestion.normalizer import fetch_and_store
         from src.storage.repository import get_recent_alerts
 
-        gold_fetcher = AsyncMock()
-        gold_fetcher.fetch.return_value = []
+        gold_fetcher = self._mock_gold_fetcher(return_value=[])
 
         fx_fetcher = AsyncMock()
 
@@ -254,10 +263,11 @@ class TestFetchAndStore:
         await db_session.commit()
 
         # Now fetch a new record with price 50% higher (clearly anomalous)
-        gold_fetcher = AsyncMock()
-        gold_fetcher.fetch.return_value = [
-            _make_fetched_price(price_usd=3000.0, currency="USD"),
-        ]
+        gold_fetcher = self._mock_gold_fetcher(
+            return_value=[
+                _make_fetched_price(price_usd=3000.0, currency="USD"),
+            ]
+        )
 
         fx_fetcher = AsyncMock()
         fx_fetcher.fetch.return_value = [
@@ -286,8 +296,7 @@ class TestFetchAndStore:
         from src.ingestion.normalizer import fetch_and_store
         from src.storage.repository import get_recent_alerts
 
-        gold_fetcher = AsyncMock()
-        gold_fetcher.fetch.side_effect = Exception("Network timeout")
+        gold_fetcher = self._mock_gold_fetcher(side_effect=Exception("Network timeout"))
 
         fx_fetcher = AsyncMock()
 

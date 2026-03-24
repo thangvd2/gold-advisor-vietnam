@@ -7,6 +7,8 @@ from src.api.routes.quality import router as quality_router
 from src.config import Settings
 from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
 from src.ingestion.fetchers.vietcombank import VietcombankFxRateFetcher
+from src.ingestion.scrapers.doji import DojiScraper
+from src.ingestion.scrapers.phuquy import PhuQuyScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
 from src.storage.database import init_db
 
@@ -20,7 +22,10 @@ async def lifespan(app: FastAPI):
     settings = Settings()
     gold_fetcher = YFinanceGoldFetcher()
     fx_fetcher = VietcombankFxRateFetcher()
-    sources = [gold_fetcher]
+    doji = DojiScraper()
+    phuquy = PhuQuyScraper()
+    vn_scrapers = [doji, phuquy]
+    sources = [gold_fetcher] + vn_scrapers
 
     start_scheduler(app_state, sources, fx_fetcher, settings)
     set_app_state(app_state)

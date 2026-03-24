@@ -21,7 +21,7 @@ async def fetch_and_store(
     fx_fetcher: FxRateFetcher,
     settings: Settings,
 ) -> dict:
-    source = gold_fetcher.__class__.__name__.replace("Fetcher", "").lower()
+    source = gold_fetcher.source_name
 
     try:
         prices = await gold_fetcher.fetch()
