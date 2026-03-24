@@ -1,6 +1,7 @@
 """Tests for dashboard HTML partials and full page (Plan 05-02)."""
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 import pytest_asyncio
@@ -38,6 +39,8 @@ async def html_test_db(tmp_path):
 
         return Settings(database_url=f"sqlite+aiosqlite:///{db_file}")
 
+    base_dir = Path(__file__).resolve().parent.parent
+
     with (
         patch("src.api.routes.dashboard.get_settings", mock_settings),
         patch(
@@ -45,10 +48,22 @@ async def html_test_db(tmp_path):
             async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False),
         ),
     ):
-        from fastapi import FastAPI
+        from fastapi import FastAPI, Request
+        from fastapi.staticfiles import StaticFiles
+        from fastapi.templating import Jinja2Templates as AppTemplates
         from src.api.routes.dashboard import router
 
+        tmpl = AppTemplates(directory=str(base_dir / "templates"))
+
         app = FastAPI()
+
+        @app.get("/")
+        async def root(request: Request):
+            return tmpl.TemplateResponse(request, "dashboard.html", context={})
+
+        app.mount(
+            "/static", StaticFiles(directory=str(base_dir / "static")), name="static"
+        )
         app.include_router(router, prefix="/dashboard", tags=["dashboard"])
         client = TestClient(app)
 

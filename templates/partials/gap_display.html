@@ -1,0 +1,66 @@
+{% if gap and gap.gap_vnd is not none %}
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-6 sm:p-8">
+  <h2 class="text-xs uppercase tracking-[0.2em] text-charcoal-300 mb-5 font-medium">SJC–International Gap</h2>
+
+  <div class="flex items-baseline gap-2 mb-2">
+    <span class="text-3xl sm:text-4xl font-display text-gold-400 tabular-nums">
+      {{ "{:,}".format(gap.gap_vnd | int) }}
+    </span>
+    <span class="text-sm text-charcoal-400 font-medium">VND</span>
+  </div>
+
+  <div class="flex items-center gap-2 mb-4">
+    {% if gap.gap_pct is not none %}
+    <span class="text-xl font-bold tabular-nums
+      {% if gap.ma_7d and gap.gap_pct > gap.ma_7d %}text-red-400
+      {% elif gap.ma_7d and gap.gap_pct < gap.ma_7d %}text-emerald-400
+      {% else %}text-gold-400{% endif %}">
+      {{ "+" if gap.gap_pct > 0 else "" }}{{ "%.2f"|format(gap.gap_pct) }}%
+    </span>
+    {% if gap.ma_7d is not none %}
+    {% if gap.gap_pct > gap.ma_7d %}
+    <svg class="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+    <span class="text-xs text-charcoal-500">vs 7d MA</span>
+    {% else %}
+    <svg class="w-5 h-5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+    <span class="text-xs text-charcoal-500">vs 7d MA</span>
+    {% endif %}
+    {% endif %}
+    {% else %}
+    <span class="text-xl text-charcoal-500">—</span>
+    {% endif %}
+  </div>
+
+  <div class="flex gap-6 text-xs text-charcoal-400 border-t border-charcoal-600/40 pt-3">
+    {% if gap.sjc_avg_vnd is not none %}
+    <div>
+      <span class="block text-charcoal-500 mb-0.5">SJC Avg</span>
+      <span class="font-semibold text-charcoal-200 tabular-nums">{{ "{:,}".format(gap.sjc_avg_vnd | int) }} VND</span>
+    </div>
+    {% endif %}
+    {% if gap.xau_vnd is not none %}
+    <div>
+      <span class="block text-charcoal-500 mb-0.5">Intl Gold</span>
+      <span class="font-semibold text-charcoal-200 tabular-nums">{{ "{:,}".format(gap.xau_vnd | int) }} VND</span>
+    </div>
+    {% endif %}
+    {% if gap.ma_7d is not none %}
+    <div>
+      <span class="block text-charcoal-500 mb-0.5">7d MA</span>
+      <span class="font-semibold text-charcoal-200 tabular-nums">{{ "%.2f"|format(gap.ma_7d) }}%</span>
+    </div>
+    {% endif %}
+    {% if gap.ma_30d is not none %}
+    <div>
+      <span class="block text-charcoal-500 mb-0.5">30d MA</span>
+      <span class="font-semibold text-charcoal-200 tabular-nums">{{ "%.2f"|format(gap.ma_30d) }}%</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center">
+  <h2 class="text-xs uppercase tracking-[0.2em] text-charcoal-300 mb-3 font-medium">SJC–International Gap</h2>
+  <p class="text-charcoal-400 text-sm">Gap data not available</p>
+</div>
+{% endif %}

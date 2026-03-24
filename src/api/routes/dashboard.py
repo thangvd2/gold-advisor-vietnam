@@ -1,8 +1,9 @@
 import asyncio
 from collections import defaultdict
 
-from fastapi import APIRouter, Query
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.templating import Jinja2Templates
 
 from src.config import Settings
 from src.engine.pipeline import compute_signal
@@ -10,7 +11,12 @@ from src.engine.types import SignalMode
 from src.storage.database import async_session
 from src.storage.repository import get_latest_prices
 
+from pathlib import Path
+
 router = APIRouter()
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 def get_settings() -> Settings:
@@ -81,3 +87,121 @@ async def get_dashboard_signal(
         )
 
     return signal.__dict__
+
+
+@router.get("/partials/signal")
+async def get_signal_partial(
+    request: Request,
+    mode: str = Query("saver", pattern="^(saver|trader)$"),
+):
+    try:
+        signal_mode = SignalMode(mode.upper())
+        signal = await asyncio.to_thread(compute_signal, _get_db_path(), signal_mode)
+
+        gap = None
+        if signal.gap_vnd is not None:
+            from src.analysis.gap import calculate_current_gap
+
+            gap_result = await asyncio.to_thread(calculate_current_gap, _get_db_path())
+            gap = gap_result
+
+        return templates.TemplateResponse(
+            request,
+            "partials/signal_card.html",
+            context={"signal": signal, "gap": gap},
+        )
+    except Exception:
+        return HTMLResponse(
+            content='<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center"><p class="text-charcoal-400 text-sm">Signal unavailable</p></div>',
+            status_code=200,
+        )
+
+
+@router.get("/partials/prices")
+async def get_prices_partial(request: Request):
+    try:
+        async with async_session() as session:
+            prices = await get_latest_prices(session)
+
+        if not prices:
+            return templates.TemplateResponse(
+                request,
+                "partials/price_table.html",
+                context={"dealers": []},
+            )
+
+        grouped: dict[str, dict] = defaultdict(
+            lambda: {"source": "", "products": [], "fetched_at": None}
+        )
+
+        for p in prices:
+            entry = grouped[p.source]
+            entry["source"] = p.source
+
+            if p.product_type == "xau_usd":
+                product = {
+                    "product_type": p.product_type,
+                    "price_usd": p.price_usd,
+                    "price_vnd": p.price_vnd,
+                }
+            else:
+                product = {
+                    "product_type": p.product_type,
+                    "buy_price": p.buy_price,
+                    "sell_price": p.sell_price,
+                    "spread": p.spread,
+                }
+
+            entry["products"].append(product)
+            if entry["fetched_at"] is None:
+                entry["fetched_at"] = p.fetched_at.isoformat() if p.fetched_at else None
+
+        dealers = list(grouped.values())
+
+        return templates.TemplateResponse(
+            request,
+            "partials/price_table.html",
+            context={"dealers": dealers},
+        )
+    except Exception:
+        return HTMLResponse(
+            content='<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center"><p class="text-charcoal-400 text-sm">No price data available</p></div>',
+            status_code=200,
+        )
+
+
+@router.get("/partials/gap")
+async def get_gap_partial(request: Request):
+    try:
+        from src.analysis.gap import calculate_current_gap
+
+        gap = await asyncio.to_thread(calculate_current_gap, _get_db_path())
+        return templates.TemplateResponse(
+            request,
+            "partials/gap_display.html",
+            context={"gap": gap},
+        )
+    except Exception:
+        return templates.TemplateResponse(
+            request,
+            "partials/gap_display.html",
+            context={"gap": None},
+        )
+
+
+@router.get("/partials/price-chart")
+async def get_price_chart_partial(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "partials/price_chart.html",
+        context={},
+    )
+
+
+@router.get("/partials/gap-chart")
+async def get_gap_chart_partial(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "partials/gap_chart.html",
+        context={},
+    )

@@ -1,0 +1,79 @@
+{% if dealers %}
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+  <div class="p-4 sm:p-6 border-b border-gold-500/10">
+    <h2 class="text-sm font-semibold uppercase tracking-[0.15em] text-charcoal-300">Dealer Prices</h2>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-charcoal-600/50 text-charcoal-400 text-xs uppercase tracking-wider">
+          <th class="text-left px-4 sm:px-6 py-3 font-medium">Dealer</th>
+          <th class="text-right px-3 py-3 font-medium" colspan="3">
+            <span class="block">SJC Bar</span>
+          </th>
+          <th class="text-right px-3 py-3 font-medium" colspan="3">
+            <span class="block">Ring Gold</span>
+          </th>
+          <th class="text-right px-4 sm:px-6 py-3 font-medium hidden sm:table-cell">Updated</th>
+        </tr>
+        <tr class="border-b border-charcoal-600/30 text-charcoal-500 text-[10px] uppercase tracking-wider">
+          <th class="px-4 sm:px-6 py-1"></th>
+          <th class="text-right px-2 py-1">Buy</th>
+          <th class="text-right px-2 py-1">Sell</th>
+          <th class="text-right px-2 py-1">Spread</th>
+          <th class="text-right px-2 py-1">Buy</th>
+          <th class="text-right px-2 py-1">Sell</th>
+          <th class="text-right px-2 py-1">Spread</th>
+          <th class="hidden sm:table-cell"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-charcoal-600/20">
+        {% for dealer in dealers %}
+        {% if dealer.source != "yfinance" %}
+        <tr class="hover:bg-charcoal-600/20 transition-colors">
+          <td class="px-4 sm:px-6 py-3 font-semibold text-charcoal-100 whitespace-nowrap">{{ dealer.source }}</td>
+          {% set sjc = dealer.products | selectattr('product_type', 'equalto', 'sjc_bar') | first %}
+          {% set ring = dealer.products | selectattr('product_type', 'equalto', 'ring_gold') | first %}
+          {% if sjc %}
+          <td class="text-right px-2 py-3 text-emerald-400 tabular-nums">{{ "{:,}".format(sjc.buy_price | int) if sjc.buy_price else "—" }}</td>
+          <td class="text-right px-2 py-3 text-red-400 tabular-nums">{{ "{:,}".format(sjc.sell_price | int) if sjc.sell_price else "—" }}</td>
+          <td class="text-right px-2 py-3 tabular-nums
+            {% if sjc.spread and sjc.spread <= 500000 %}text-emerald-500
+            {% elif sjc.spread and sjc.spread <= 2000000 %}text-amber-500
+            {% else %}text-red-500{% endif %}">
+            {{ "{:,}".format(sjc.spread | int) if sjc.spread else "—" }}
+          </td>
+          {% else %}
+          <td class="text-right px-2 py-3 text-charcoal-500">—</td>
+          <td class="text-right px-2 py-3 text-charcoal-500">—</td>
+          <td class="text-right px-2 py-3 text-charcoal-500">—</td>
+          {% endif %}
+          {% if ring %}
+          <td class="text-right px-2 py-3 text-emerald-400 tabular-nums">{{ "{:,}".format(ring.buy_price | int) if ring.buy_price else "—" }}</td>
+          <td class="text-right px-2 py-3 text-red-400 tabular-nums">{{ "{:,}".format(ring.sell_price | int) if ring.sell_price else "—" }}</td>
+          <td class="text-right px-2 py-3 tabular-nums
+            {% if ring.spread and ring.spread <= 500000 %}text-emerald-500
+            {% elif ring.spread and ring.spread <= 2000000 %}text-amber-500
+            {% else %}text-red-500{% endif %}">
+            {{ "{:,}".format(ring.spread | int) if ring.spread else "—" }}
+          </td>
+          {% else %}
+          <td class="text-right px-2 py-3 text-charcoal-500">—</td>
+          <td class="text-right px-2 py-3 text-charcoal-500">—</td>
+          <td class="text-right px-2 py-3 text-charcoal-500">—</td>
+          {% endif %}
+          <td class="text-right px-4 sm:px-6 py-3 text-charcoal-500 text-xs hidden sm:table-cell whitespace-nowrap">
+            {{ dealer.fetched_at[:19] if dealer.fetched_at else "—" }}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center">
+  <p class="text-charcoal-400 text-sm">No price data available</p>
+</div>
+{% endif %}
