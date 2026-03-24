@@ -20,10 +20,10 @@ def news_test_app():
     with engine.connect() as conn:
         conn.execute(
             __import__("sqlalchemy").text(
-                "INSERT INTO news_items (title, url, source, published_at, category) VALUES "
-                "('Gold up 5%', 'https://a.com/1', 'Reuters', '2026-03-25T10:00:00Z', 'gold_market'),"
-                "('SBV auction', 'https://sbv.gov.vn/1', 'State Bank', '2026-03-25T08:00:00Z', 'state_bank'),"
-                "('Gold flat', 'https://a.com/2', 'Bloomberg', '2026-03-24T10:00:00Z', 'gold_market')"
+                "INSERT INTO news_items (title, url, source, published_at, category, is_manual) VALUES "
+                "('Gold up 5%', 'https://a.com/1', 'Reuters', '2026-03-25T10:00:00Z', 'gold_market', 0),"
+                "('SBV auction', 'https://sbv.gov.vn/1', 'State Bank', '2026-03-25T08:00:00Z', 'state_bank', 0),"
+                "('Gold flat', 'https://a.com/2', 'Bloomberg', '2026-03-24T10:00:00Z', 'gold_market', 0)"
             )
         )
         conn.commit()

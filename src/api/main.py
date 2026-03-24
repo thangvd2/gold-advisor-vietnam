@@ -12,6 +12,7 @@ from src.api.routes.prices import router as prices_router
 from src.api.routes.signals import router as signals_router
 from src.api.routes.dashboard import router as dashboard_router
 from src.api.routes.admin import router as admin_router
+from src.api.routes.news import router as news_router
 from src.config import Settings
 from src.ingestion.fetchers.dxy import DXYFetcher
 from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
@@ -64,6 +65,7 @@ app.include_router(prices_router, prefix="/api/prices", tags=["prices"])
 app.include_router(signals_router, prefix="/api/signals", tags=["signals"])
 app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
+app.include_router(news_router, prefix="/api/news", tags=["news"])
 
 
 @app.get("/")
