@@ -29,7 +29,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Delivery & Interface
 
 - [x] **DEL-01**: User can access a mobile-responsive web dashboard showing current prices, gap, signal, confidence, reasoning, charts, and macro indicators
-- [ ] **DEL-02**: User receives Telegram push notifications on signal changes and significant price movements
+- [x] **DEL-02**: User receives Telegram push notifications on signal changes and significant price movements
 - [ ] **DEL-03**: User can read aggregated market news feed including gold market news and State Bank policy announcements
 
 ## v2 Requirements

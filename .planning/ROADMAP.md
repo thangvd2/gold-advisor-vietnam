@@ -113,7 +113,12 @@ Plans:
   2. User receives a Telegram message when the signal changes (e.g., Hold → Buy)
   3. User receives a Telegram message on significant price movements (threshold-based)
   4. Alert messages include the signal/reasoning and a "not financial advice" disclaimer
-**Plans**: TBD
+**Plans**: 0/3 plans complete
+
+Plans:
+- [x] 06-01-PLAN.md — Telegram bot setup with /start and /status commands
+- [x] 06-02-PLAN.md — Alert dispatcher with signal change detection and message templates
+- [x] 06-03-PLAN.md — Wire alerts into scheduler pipeline and end-to-end verification
 
 ### Phase 7: Macro Indicators
 **Goal**: Users can see macroeconomic context (USD/VND exchange rate, real interest rates, DXY dollar strength, global gold trend) on the dashboard and macro factors influence signal confidence
@@ -165,7 +170,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 3. Gap Analysis & Price Charts | 0/2 | Complete    | 2026-03-24 |
 | 4. Signal Engine Core | 3/4 | Complete    | 2026-03-24 |
 | 5. Web Dashboard | 0/3 | Complete    | 2026-03-24 |
-| 6. Telegram Alerts | TBD | Not started | - |
+| 6. Telegram Alerts | 3/3 | Complete    | 2026-03-25 |
 | 7. Macro Indicators | TBD | Not started | - |
 | 8. State Bank Policy & Seasonal Factors | TBD | Not started | - |
 | 9. Market News Feed | TBD | Not started | - |

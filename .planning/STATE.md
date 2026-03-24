@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to plan
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-03-24T19:59:57.451Z"
+stopped_at: Completed 06-03-PLAN.md
+last_updated: "2026-03-25T20:10:00.000Z"
 progress:
   total_phases: 9
-  completed_phases: 5
-  total_plans: 15
-  completed_plans: 15
+  completed_phases: 6
+  total_plans: 18
+  completed_plans: 18
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Users buy lower and sell higher than they would with blind timing, and they understand *why*.
-**Current focus:** Phase 5 — web-dashboard
+**Current focus:** Phase 6 — telegram-alerts (COMPLETE)
 
 ## Current Position
 
-Phase: 6
+Phase: 7
 Plan: Not started
 
 ## Performance Metrics
@@ -58,6 +58,9 @@ Plan: Not started
 | Phase 05 P01 | 4 | 2 tasks | 8 files |
 | Phase 05 P02 | 3 | 2 tasks | 10 files |
 | Phase 05 P03 | 0 | 1 tasks | 0 files |
+| Phase 06 P01 | 4min | 1 tasks | 5 files |
+| Phase 06 P02 | 3min | 1 tasks | 2 files |
+| Phase 06 P03 | 4min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -104,6 +107,12 @@ Recent decisions affecting current work:
 - [Phase 05]: Chart.js dark theme with gold accent palette: SJC=#D4AF37, Ring=#F5D76E, Intl=#4A90D9
 - [Phase 05]: Mode toggle via htmx.ajax() re-fetching signal partial with ?mode= query param
 - [Phase 05]: Auto-approved dashboard verification checkpoint per user autonomous execution request
+- [Phase 06]: Bot runs in daemon thread (not asyncio) for simpler lifecycle with APScheduler
+- [Phase 06]: Empty token = bot disabled with warning log, not crash
+- [Phase 06]: ±20% confidence threshold and >2% price movement threshold for alerts
+- [Phase 06]: First signal stored as baseline without alert (debounce)
+- [Phase 06]: asyncio.new_event_loop() for sync-to-async dispatch in scheduler thread
+- [Phase 06]: Separate scheduler job for alert dispatch (same interval as fetch)
 
 ### Pending Todos
 
@@ -117,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T19:57:31.464Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-03-25T20:01:03.000Z
+Stopped at: Completed 06-03-PLAN.md
 Resume file: None
