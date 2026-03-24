@@ -12,7 +12,8 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 
 ### Validated
 
-(None yet — ship to validate)
+- [x] International gold price (XAUUSD) displayed in both USD and VND — Validated in Phase 1
+- [x] System validates prices across sources and flags stale, missing, or anomalous data — Validated in Phase 1
 
 ### Active
 
@@ -62,7 +63,8 @@ Vietnam's gold market has unique characteristics that make timing meaningful:
 | Vietnam-only market | Vietnamese gold market has unique dynamics that general tools miss | — Pending |
 | SJC bars + nhẫn trơn | These are the two dominant physical gold products in Vietnam | — Pending |
 | Web dashboard + messenger alerts | Dashboard for analysis, messenger for timely action — matches how Vietnamese users consume info | — Pending |
-| Scrape Vietnamese sources + international APIs | No single API covers domestic Vietnamese gold prices — need both | — Pending |
+| Scrape Vietnamese sources + international APIs | No single API covers domestic Vietnamese gold prices — need both | yfinance + Vietcombank market rate (free-first per D-01) |
+| Market FX rate over SBV official | Gap calc accuracy requires real import cost rate | Vietcombank selling rate (D-02) |
 
 ## Evolution
 
@@ -82,4 +84,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 after initialization*
+*Last updated: 2026-03-25 after Phase 1 completion*
