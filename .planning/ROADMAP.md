@@ -85,7 +85,7 @@ Plans:
 - [x] 04-01-PLAN.md — Signal types + gap/spread/trend factors + composite scorer (SIG-01)
 - [x] 04-02-PLAN.md — Reasoning generator + Saver/Trader modes + signal persistence (SIG-02, SIG-06)
 - [x] 04-03-PLAN.md — Signal pipeline orchestrator + API endpoints + FastAPI wiring (SIG-01, SIG-02, SIG-06)
-- [ ] 04-04-PLAN.md — Gap closure: wire mode weights + connect spread data to pipeline (SIG-01, SIG-06)
+- [x] 04-04-PLAN.md — Gap closure: wire mode weights + connect spread data to pipeline (SIG-01, SIG-06)
 
 ### Phase 5: Web Dashboard
 **Goal**: Users can view all current data (dealer prices, gap tracker, signal with confidence and reasoning, price charts) on a mobile-responsive web dashboard
