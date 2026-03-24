@@ -22,6 +22,7 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 - [x] Buy/Hold/Sell signal with confidence level — Validated in Phase 4
 - [x] One-line reasoning explanation with each signal — Validated in Phase 4
 - [x] Saver/Trader mode with adapted signals — Validated in Phase 4
+- [x] Mobile-responsive web dashboard with prices, gap, signal, charts — Validated in Phase 5
 
 ### Active
 

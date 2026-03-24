@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Vietnamese Gold Price Scraping** - Scrape SJC bars, ring gold, and spreads from 5+ dealers (completed 2026-03-24)
 - [x] **Phase 3: Gap Analysis & Price Charts** - Compute and visualize the SJC-international price gap (completed 2026-03-24)
 - [x] **Phase 4: Signal Engine Core** - Generate Buy/Hold/Sell signals with confidence and reasoning (completed 2026-03-24)
-- [ ] **Phase 5: Web Dashboard** - Mobile-responsive dashboard showing prices, gap, signal, and charts
+- [x] **Phase 5: Web Dashboard** - Mobile-responsive dashboard showing prices, gap, signal, and charts (completed 2026-03-24)
 - [ ] **Phase 6: Telegram Alerts** - Push notifications on signal changes and price movements
 - [ ] **Phase 7: Macro Indicators** - Factor USD/VND, interest rates, DXY, and global gold trend into signals
 - [ ] **Phase 8: State Bank Policy & Seasonal Factors** - Incorporate regulatory events and Vietnamese seasonal demand patterns
@@ -97,7 +97,7 @@ Plans:
   3. Dashboard displays SJC-international gap with historical trend
   4. Dashboard includes price charts for SJC bars, ring gold, and international gold across selectable timeframes
   5. Dashboard is usable on mobile devices (responsive layout, readable without horizontal scrolling)
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 05-01-PLAN.md — Dashboard data API + template/static infrastructure (Tailwind, Chart.js, HTMX)
@@ -164,7 +164,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 2. Vietnamese Gold Price Scraping | 0/3 | Complete    | 2026-03-24 |
 | 3. Gap Analysis & Price Charts | 0/2 | Complete    | 2026-03-24 |
 | 4. Signal Engine Core | 3/4 | Complete    | 2026-03-24 |
-| 5. Web Dashboard | 0/3 | Planning done | - |
+| 5. Web Dashboard | 0/3 | Complete    | 2026-03-24 |
 | 6. Telegram Alerts | TBD | Not started | - |
 | 7. Macro Indicators | TBD | Not started | - |
 | 8. State Bank Policy & Seasonal Factors | TBD | Not started | - |
