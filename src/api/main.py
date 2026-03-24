@@ -12,6 +12,7 @@ from src.api.routes.prices import router as prices_router
 from src.api.routes.signals import router as signals_router
 from src.api.routes.dashboard import router as dashboard_router
 from src.config import Settings
+from src.ingestion.fetchers.dxy import DXYFetcher
 from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
 from src.ingestion.fetchers.vietcombank import VietcombankFxRateFetcher
 from src.ingestion.scrapers.doji import DojiScraper
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     await init_db()
 
     settings = Settings()
+    dxy_fetcher = DXYFetcher()
     gold_fetcher = YFinanceGoldFetcher()
     fx_fetcher = VietcombankFxRateFetcher()
     doji = DojiScraper()
@@ -42,7 +44,7 @@ async def lifespan(app: FastAPI):
     pnj = PNJScraper()
     btmc = BTMCScraper()
     vn_scrapers = [doji, phuquy, sjc, pnj, btmc]
-    sources = [gold_fetcher] + vn_scrapers
+    sources = [gold_fetcher, dxy_fetcher] + vn_scrapers
 
     start_scheduler(app_state, sources, fx_fetcher, settings)
     start_bot(settings.database_url)
