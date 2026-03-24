@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.ingestion.models import FetchedPrice
-from src.storage.models import DataQualityAlert, PriceRecord, SignalRecord
+from src.storage.models import DataQualityAlert, NewsItem, PriceRecord, SignalRecord
 
 
 async def save_price(
@@ -158,5 +158,47 @@ async def get_signals_since(
     if mode is not None:
         stmt = stmt.where(SignalRecord.mode == mode.value)
     stmt = stmt.order_by(SignalRecord.created_at.asc())
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def save_news_item(
+    session: AsyncSession,
+    title: str,
+    url: str,
+    source: str,
+    published_at: datetime | None = None,
+    excerpt: str | None = None,
+    category: str | None = None,
+    is_manual: bool = False,
+) -> NewsItem | None:
+    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+    stmt = sqlite_insert(NewsItem).values(
+        title=title,
+        url=url,
+        source=source,
+        published_at=published_at,
+        excerpt=excerpt,
+        category=category,
+        is_manual=is_manual,
+    )
+    stmt = stmt.on_conflict_do_nothing(index_elements=["url"])
+    result = await session.execute(stmt)
+    await session.flush()
+    if result.lastrowid:
+        return await session.get(NewsItem, result.lastrowid)
+    return None
+
+
+async def get_recent_news(
+    session: AsyncSession,
+    limit: int = 20,
+    category: str | None = None,
+) -> list[NewsItem]:
+    stmt = select(NewsItem).order_by(NewsItem.published_at.desc().nullslast())
+    if category:
+        stmt = stmt.where(NewsItem.category == category)
+    stmt = stmt.limit(limit)
     result = await session.execute(stmt)
     return list(result.scalars().all())
