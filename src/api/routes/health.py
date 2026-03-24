@@ -1,6 +1,5 @@
 from fastapi import APIRouter
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.storage.database import async_session
 
