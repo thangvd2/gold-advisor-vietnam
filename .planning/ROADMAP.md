@@ -36,7 +36,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — FastAPI app scaffold, SQLite database models, config, health endpoint
+- [x] 01-01-PLAN.md — FastAPI app scaffold, SQLite database models, config, health endpoint
 - [ ] 01-02-PLAN.md — Gold price fetcher (yfinance), USD/VND FX fetcher (Vietcombank), repository layer
 - [ ] 01-03-PLAN.md — Data quality checks, APScheduler integration, quality API, end-to-end pipeline
 
