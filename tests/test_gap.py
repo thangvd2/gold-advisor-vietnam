@@ -319,12 +319,12 @@ class TestCalculateHistoricalGaps:
         from src.analysis.gap import calculate_historical_gaps
 
         now = datetime.now(timezone.utc)
+        base = now - timedelta(hours=3)
+        base = base.replace(second=0, microsecond=0)
         records: list[PriceRecord] = []
 
         for minute in range(0, 180, 5):
-            ts = now.replace(minute=minute, second=0, microsecond=0) - timedelta(
-                hours=3
-            )
+            ts = base + timedelta(minutes=minute)
             records.append(
                 _make_record(
                     source="sjc",
@@ -336,9 +336,7 @@ class TestCalculateHistoricalGaps:
             )
 
         for minute in range(0, 180, 15):
-            ts = now.replace(minute=minute, second=0, microsecond=0) - timedelta(
-                hours=3
-            )
+            ts = base + timedelta(minutes=minute)
             records.append(
                 _make_record(
                     source="yfinance",
