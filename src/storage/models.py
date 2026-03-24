@@ -44,3 +44,21 @@ class DataQualityAlert(Base):
     detected_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
+
+
+class SignalRecord(Base):
+    __tablename__ = "signal_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    recommendation: Mapped[str] = mapped_column(String(10))
+    confidence: Mapped[int] = mapped_column(Integer)
+    gap_vnd: Mapped[float | None] = mapped_column(Float, nullable=True)
+    gap_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mode: Mapped[str] = mapped_column(String(20))
+    reasoning: Mapped[str] = mapped_column(String(500))
+    factor_data: Mapped[str] = mapped_column(String(2000))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (Index("idx_signal_mode_created", "mode", "created_at"),)

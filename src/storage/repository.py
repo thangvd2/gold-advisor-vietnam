@@ -1,12 +1,13 @@
-"""CRUD operations for price_history and data_quality_alerts tables."""
+"""CRUD operations for price_history, data_quality_alerts, and signal_history tables."""
 
+import json
 from datetime import datetime
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.ingestion.models import FetchedPrice
-from src.storage.models import DataQualityAlert, PriceRecord
+from src.storage.models import DataQualityAlert, PriceRecord, SignalRecord
 
 
 async def save_price(
@@ -112,5 +113,50 @@ async def get_recent_alerts(
         .where(DataQualityAlert.detected_at >= since)
         .order_by(DataQualityAlert.detected_at.desc())
     )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def save_signal(session: AsyncSession, signal) -> SignalRecord:
+    factors_json = json.dumps(
+        [
+            {
+                "name": f.name,
+                "direction": f.direction,
+                "weight": f.weight,
+                "confidence": f.confidence,
+            }
+            for f in signal.factors
+        ]
+    )
+    record = SignalRecord(
+        recommendation=signal.recommendation.value,
+        confidence=signal.confidence,
+        gap_vnd=signal.gap_vnd,
+        gap_pct=signal.gap_pct,
+        mode=signal.mode.value,
+        reasoning=signal.reasoning,
+        factor_data=factors_json,
+    )
+    session.add(record)
+    await session.flush()
+    return record
+
+
+async def get_latest_signal(session: AsyncSession, mode=None) -> SignalRecord | None:
+    stmt = select(SignalRecord).order_by(SignalRecord.created_at.desc()).limit(1)
+    if mode is not None:
+        stmt = stmt.where(SignalRecord.mode == mode.value)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def get_signals_since(
+    session: AsyncSession, since_dt: datetime, mode=None
+) -> list[SignalRecord]:
+    stmt = select(SignalRecord).where(SignalRecord.created_at >= since_dt)
+    if mode is not None:
+        stmt = stmt.where(SignalRecord.mode == mode.value)
+    stmt = stmt.order_by(SignalRecord.created_at.asc())
     result = await session.execute(stmt)
     return list(result.scalars().all())
