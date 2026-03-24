@@ -47,5 +47,13 @@ def retry(max_retries: int = 3, backoff_factor: float = 1.0):
 
 
 class DataSource(ABC):
+    @property
+    def source_name(self) -> str:
+        name = self.__class__.__name__
+        for suffix in ("Fetcher", "Scraper"):
+            if name.endswith(suffix):
+                return name[: -len(suffix)].lower()
+        return name.lower()
+
     @abstractmethod
     async def fetch(self) -> list[FetchedPrice]: ...
