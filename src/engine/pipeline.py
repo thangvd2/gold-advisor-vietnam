@@ -10,10 +10,20 @@ from src.engine.fx_signal import compute_fx_signal
 from src.engine.gap_signal import compute_gap_signal
 from src.engine.gold_trend_signal import compute_gold_trend_signal
 from src.engine.modes import get_mode_weights
+from src.engine.policy import compute_policy_signal
 from src.engine.reasoning import generate_reasoning
+from src.engine.seasonal import (
+    compute_seasonal_signal,
+    get_seasonal_demand_level,
+    get_month_name,
+)
 from src.engine.spread_signal import compute_spread_signal
 from src.engine.trend_signal import compute_trend_signal
 from src.engine.types import Recommendation, Signal, SignalMode
+
+
+def _current_month() -> int:
+    return datetime.now(timezone.utc).month
 
 
 def compute_signal(db_path: str, mode: SignalMode = SignalMode.SAVER) -> Signal:
@@ -49,11 +59,35 @@ def compute_signal(db_path: str, mode: SignalMode = SignalMode.SAVER) -> Signal:
 
     factors = [gap_factor, spread_factor, trend_factor, fx_factor, gold_trend_factor]
 
-    signal = compute_composite_signal(factors, mode)
+    month = _current_month()
+    seasonal_factor = compute_seasonal_signal(month)
+    factors.append(seasonal_factor)
+
+    policy_override = compute_policy_signal(db_path)
+
+    seasonal_demand_level = get_seasonal_demand_level(month)
+    seasonal_info = {
+        "month": month,
+        "demand_level": seasonal_demand_level,
+        "modifier": seasonal_factor.confidence,
+    }
+
+    signal = compute_composite_signal(
+        factors,
+        mode,
+        policy_override=policy_override,
+        seasonal_modifier=seasonal_factor.confidence,
+    )
 
     signal.gap_vnd = current_gap.get("gap_vnd")
     signal.gap_pct = current_gap.get("gap_pct")
 
-    signal.reasoning = generate_reasoning(signal, current_gap, historical_gaps)
+    signal.reasoning = generate_reasoning(
+        signal,
+        current_gap,
+        historical_gaps,
+        seasonal_info=seasonal_info,
+        policy_info=policy_override,
+    )
 
     return signal

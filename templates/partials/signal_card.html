@@ -57,6 +57,22 @@
     <p class="text-charcoal-200 text-sm leading-relaxed italic">{{ signal.reasoning }}</p>
     {% endif %}
 
+    {% if seasonal_info and seasonal_info.demand_level in ('very_high', 'high') %}
+    <div class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+      <svg class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="text-xs text-amber-300 font-medium">
+        {% if seasonal_info.demand_level == 'very_high' %}High Demand Season{% else %}Elevated Demand{% endif %}
+      </span>
+    </div>
+    {% endif %}
+
+    {% if policy_info and policy_info.has_override %}
+    <div class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+      <svg class="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span class="text-xs text-red-300 font-medium">State Bank Policy Active</span>
+    </div>
+    {% endif %}
+
     {% if gap %}
     <div class="mt-4 pt-4 border-t border-charcoal-600/50 flex flex-wrap items-center gap-4 text-xs text-charcoal-400">
       <span>Gap: <span class="text-gold-400 font-semibold">{{ "{:,}".format(gap.gap_vnd | int) if gap.gap_vnd else "—" }} VND</span></span>

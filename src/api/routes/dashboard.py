@@ -77,6 +77,8 @@ async def get_dashboard_prices():
 async def get_dashboard_signal(
     mode: str = Query("saver", pattern="^(saver|trader)$"),
 ):
+    from datetime import datetime, timezone
+
     signal_mode = SignalMode(mode.upper())
     signal = await asyncio.to_thread(compute_signal, _get_db_path(), signal_mode)
 
@@ -86,7 +88,29 @@ async def get_dashboard_signal(
             content={"error": "insufficient data"},
         )
 
-    return signal.__dict__
+    month = datetime.now(timezone.utc).month
+    from src.engine.seasonal import get_seasonal_demand_level, compute_seasonal_modifier
+
+    seasonal_info = {
+        "month": month,
+        "demand_level": get_seasonal_demand_level(month),
+        "modifier": compute_seasonal_modifier(month),
+    }
+
+    policy_info = None
+    try:
+        from src.engine.policy import compute_policy_signal
+
+        policy_info = await asyncio.to_thread(compute_policy_signal, _get_db_path())
+    except Exception:
+        pass
+
+    result = signal.__dict__
+    result["seasonal_demand_level"] = seasonal_info["demand_level"]
+    result["active_policy_events"] = (
+        len(policy_info["active_events"]) if policy_info else 0
+    )
+    return result
 
 
 @router.get("/partials/signal")
@@ -95,6 +119,8 @@ async def get_signal_partial(
     mode: str = Query("saver", pattern="^(saver|trader)$"),
 ):
     try:
+        from datetime import datetime, timezone
+
         signal_mode = SignalMode(mode.upper())
         signal = await asyncio.to_thread(compute_signal, _get_db_path(), signal_mode)
 
@@ -105,10 +131,35 @@ async def get_signal_partial(
             gap_result = await asyncio.to_thread(calculate_current_gap, _get_db_path())
             gap = gap_result
 
+        month = datetime.now(timezone.utc).month
+        from src.engine.seasonal import (
+            get_seasonal_demand_level,
+            compute_seasonal_modifier,
+        )
+
+        seasonal_info = {
+            "month": month,
+            "demand_level": get_seasonal_demand_level(month),
+            "modifier": compute_seasonal_modifier(month),
+        }
+
+        policy_info = None
+        try:
+            from src.engine.policy import compute_policy_signal
+
+            policy_info = await asyncio.to_thread(compute_policy_signal, _get_db_path())
+        except Exception:
+            pass
+
         return templates.TemplateResponse(
             request,
             "partials/signal_card.html",
-            context={"signal": signal, "gap": gap},
+            context={
+                "signal": signal,
+                "gap": gap,
+                "seasonal_info": seasonal_info,
+                "policy_info": policy_info,
+            },
         )
     except Exception:
         return HTMLResponse(

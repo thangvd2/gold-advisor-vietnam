@@ -7,6 +7,8 @@ from src.engine.types import Signal, SignalFactor, Recommendation, SignalMode
 def compute_composite_signal(
     factors: list[SignalFactor],
     mode: SignalMode = SignalMode.SAVER,
+    policy_override: dict | None = None,
+    seasonal_modifier: float = 1.0,
 ) -> Signal:
     if not factors:
         return Signal(
@@ -30,6 +32,13 @@ def compute_composite_signal(
 
     total_weight = sum(f.weight for f in factors)
     confidence = int(sum(f.confidence * f.weight for f in factors) / total_weight * 100)
+
+    if seasonal_modifier < 1.0:
+        confidence = int(confidence * seasonal_modifier)
+
+    if policy_override and policy_override.get("has_override"):
+        cap = int(policy_override.get("confidence_cap", 1.0) * 100)
+        confidence = min(confidence, cap)
 
     return Signal(
         recommendation=recommendation,

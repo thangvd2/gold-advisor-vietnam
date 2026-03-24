@@ -13,6 +13,8 @@ def generate_reasoning(
     signal: Signal,
     current_gap: dict | None = None,
     historical_gaps: list[dict] | None = None,
+    seasonal_info: dict | None = None,
+    policy_info: dict | None = None,
 ) -> str:
     gap_pct = None
     if current_gap and "gap_pct" in current_gap:
@@ -31,15 +33,24 @@ def generate_reasoning(
 
     body = _build_reasoning_body(signal, gap_pct, ma_label, ma_display)
     macro_context = _build_macro_context(signal.factors)
+    seasonal_context = _build_seasonal_context(seasonal_info)
+    policy_context = _build_policy_context(policy_info)
 
+    parts = [body]
     if macro_context:
-        body = f"{body}. {macro_context}"
+        parts.append(macro_context)
+    if seasonal_context:
+        parts.append(seasonal_context)
+    if policy_context:
+        parts.append(policy_context)
+
+    combined_body = ". ".join(parts)
 
     mode_prefix = _mode_prefix(signal.mode)
 
     if mode_prefix:
-        return f"{mode_prefix} {body}"
-    return body
+        return f"{mode_prefix} {combined_body}"
+    return combined_body
 
 
 def _find_ma(historical_gaps: list[dict] | None) -> float | None:
@@ -105,6 +116,30 @@ def _build_macro_context(factors: list) -> str:
             elif f.direction < 0:
                 parts.append("global gold trending down")
     return "; ".join(parts)
+
+
+def _build_seasonal_context(seasonal_info: dict | None) -> str:
+    if not seasonal_info:
+        return ""
+    demand_level = seasonal_info.get("demand_level", "")
+    month = seasonal_info.get("month", 0)
+    if demand_level in ("very_high", "high"):
+        from src.engine.seasonal import get_month_name
+
+        month_name = get_month_name(month) if month else ""
+        if demand_level == "very_high":
+            return f"High demand season ({month_name}) — gap widening is expected"
+        return f"Elevated demand ({month_name}) — wider gaps are typical"
+    return ""
+
+
+def _build_policy_context(policy_info: dict | None) -> str:
+    if not policy_info:
+        return ""
+    if not policy_info.get("has_override"):
+        return ""
+    summary = policy_info.get("summary", "State Bank policy event active")
+    return f"State Bank policy alert: {summary}"
 
 
 def _mode_prefix(mode: SignalMode) -> str:
