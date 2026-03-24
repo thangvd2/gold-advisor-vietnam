@@ -1,12 +1,9 @@
 """Tests for DOJI gold price scraper."""
 
 import httpx
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-from src.ingestion.models import FetchedPrice
 
 
 def _make_mock_response(html: str) -> MagicMock:

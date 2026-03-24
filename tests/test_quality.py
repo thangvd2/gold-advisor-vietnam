@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 import pytest_asyncio
-from unittest.mock import AsyncMock, PropertyMock
+from unittest.mock import AsyncMock
 
 from src.ingestion.models import FetchedPrice
 from src.config import Settings
