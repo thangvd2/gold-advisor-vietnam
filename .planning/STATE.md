@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Executing Phase 4
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-24T19:24:15.047Z"
+status: Ready to execute
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-03-24T19:27:44.461Z"
 progress:
   total_phases: 9
   completed_phases: 3
   total_plans: 11
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 4 (signal-engine-core) — EXECUTING
-Plan: 1 of 3
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Plan: 1 of 3
 | Phase 02 P03 | 5min | 2 tasks | 6 files |
 | Phase 03 P01 | 475 | 2 tasks | 8 files |
 | Phase 03 P02 | 205 | 2 tasks | 5 files |
+| Phase 04 P02 | 152 | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -84,6 +85,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Epoch-based bucketing via DuckDB to_timestamp for adaptive price chart resolution
 - [Phase 03]: price_vnd field for xau_usd charts to match gap calculation convention
 - [Phase 04]: Composite thresholds: Saver (0.05/-0.05), Trader (0.25/-0.25), default (0.15/-0.15)
+- [Phase 04]: Reasoning uses f-string formatting — pure deterministic, no LLM
+- [Phase 04]: MA fallback chain: 30d → 7d when 30d unavailable
+- [Phase 04]: SignalRecord.factor_data stored as JSON string for simplicity
 
 ### Pending Todos
 
@@ -97,6 +101,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T19:13:05.502Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-03-24T19:27:44.458Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
