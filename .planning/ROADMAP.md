@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Signal Engine Core** - Generate Buy/Hold/Sell signals with confidence and reasoning (completed 2026-03-24)
 - [x] **Phase 5: Web Dashboard** - Mobile-responsive dashboard showing prices, gap, signal, and charts (completed 2026-03-24)
 - [x] **Phase 6: Telegram Alerts** - Push notifications on signal changes and price movements (completed 2026-03-24)
-- [ ] **Phase 7: Macro Indicators** - Factor USD/VND, interest rates, DXY, and global gold trend into signals
+- [x] **Phase 7: Macro Indicators** - Factor USD/VND, interest rates, DXY, and global gold trend into signals (completed 2026-03-25)
 - [ ] **Phase 8: State Bank Policy & Seasonal Factors** - Incorporate regulatory events and Vietnamese seasonal demand patterns
 - [ ] **Phase 9: Market News Feed** - Aggregated gold market news and State Bank policy announcements
 
@@ -130,7 +130,12 @@ Plans:
   3. Dashboard displays DXY dollar strength index
   4. Dashboard displays global gold trend direction
   5. Macro indicators contribute to signal confidence calculation
-**Plans**: TBD
+**Plans**: 3/3 plans complete
+
+Plans:
+- [x] 07-01-PLAN.md — DXY fetcher + FX trend + gold trend calculators
+- [x] 07-02-PLAN.md — Macro signal factors + composite scorer integration
+- [x] 07-03-PLAN.md — Macro dashboard section + API endpoints
 **UI hint**: yes
 
 ### Phase 8: State Bank Policy & Seasonal Factors
@@ -171,7 +176,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 4. Signal Engine Core | 3/4 | Complete    | 2026-03-24 |
 | 5. Web Dashboard | 0/3 | Complete    | 2026-03-24 |
 | 6. Telegram Alerts | 3/3 | Complete    | 2026-03-24 |
-| 7. Macro Indicators | TBD | Not started | - |
+| 7. Macro Indicators | 3/3 | Complete    | 2026-03-25 |
 | 8. State Bank Policy & Seasonal Factors | TBD | Not started | - |
 | 9. Market News Feed | TBD | Not started | - |
 

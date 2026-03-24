@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 06-03-PLAN.md
-last_updated: "2026-03-24T20:08:43.812Z"
+status: Complete
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-03-25T20:25:00.000Z"
 progress:
   total_phases: 9
-  completed_phases: 6
-  total_plans: 18
-  completed_plans: 18
+  completed_phases: 7
+  total_plans: 21
+  completed_plans: 21
 ---
 
 # Project State
@@ -19,11 +19,11 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Users buy lower and sell higher than they would with blind timing, and they understand *why*.
-**Current focus:** Phase 6 — telegram-alerts (COMPLETE)
+**Current focus:** Phase 7 — macro-indicators (COMPLETE)
 
 ## Current Position
 
-Phase: 07
+Phase: 08
 Plan: Not started
 
 ## Performance Metrics
@@ -113,6 +113,13 @@ Recent decisions affecting current work:
 - [Phase 06]: First signal stored as baseline without alert (debounce)
 - [Phase 06]: asyncio.new_event_loop() for sync-to-async dispatch in scheduler thread
 - [Phase 06]: Separate scheduler job for alert dispatch (same interval as fetch)
+- [Phase 07]: DXY fetched via yfinance ^DXY ticker, stored as product_type='dxy'
+- [Phase 07]: Macro trend calculators use DuckDB window functions on existing price_history (no new table)
+- [Phase 07]: 1% threshold for trend direction classification (up/down/neutral)
+- [Phase 07]: Macro factors weighted at 0.1 each (low influence, supplementary to gap/spread/trend)
+- [Phase 07]: Gap weight reduced (saver: 0.4→0.3, trader: 0.6→0.5) to accommodate macro factors
+- [Phase 07]: Real interest rates deferred — DXY used as proxy for dollar strength
+- [Phase 07]: Macro context appended to reasoning as separate clause
 
 ### Pending Todos
 
@@ -126,6 +133,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T20:01:03.000Z
-Stopped at: Completed 06-03-PLAN.md
+Last session: 2026-03-25T20:25:00.000Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
