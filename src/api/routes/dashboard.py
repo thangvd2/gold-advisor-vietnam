@@ -205,3 +205,37 @@ async def get_gap_chart_partial(request: Request):
         "partials/gap_chart.html",
         context={},
     )
+
+
+@router.get("/macro")
+async def get_macro_data():
+    db_path = _get_db_path()
+    try:
+        from src.analysis.macro import calculate_fx_trend, calculate_gold_trend
+
+        fx_trend = await asyncio.to_thread(calculate_fx_trend, db_path)
+        gold_trend = await asyncio.to_thread(calculate_gold_trend, db_path)
+
+        dxy_value = None
+        async with async_session() as session:
+            from sqlalchemy import select
+            from src.storage.models import PriceRecord
+
+            stmt = (
+                select(PriceRecord)
+                .where(PriceRecord.product_type == "dxy")
+                .order_by(PriceRecord.timestamp.desc())
+                .limit(1)
+            )
+            result = await session.execute(stmt)
+            record = result.scalar_one_or_none()
+            if record and record.price_usd:
+                dxy_value = record.price_usd
+
+        return {
+            "fx_trend": fx_trend,
+            "gold_trend": gold_trend,
+            "dxy": dxy_value,
+        }
+    except Exception:
+        return {"fx_trend": None, "gold_trend": None, "dxy": None}
