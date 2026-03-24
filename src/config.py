@@ -14,3 +14,4 @@ class Settings(BaseSettings):
     fetch_interval_minutes: int = 5
     freshness_threshold_minutes: int = 15
     anomaly_threshold_percent: float = 10.0
+    telegram_bot_token: str = ""
