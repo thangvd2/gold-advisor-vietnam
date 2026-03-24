@@ -97,8 +97,12 @@ Plans:
   3. Dashboard displays SJC-international gap with historical trend
   4. Dashboard includes price charts for SJC bars, ring gold, and international gold across selectable timeframes
   5. Dashboard is usable on mobile devices (responsive layout, readable without horizontal scrolling)
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Dashboard data API + template/static infrastructure (Tailwind, Chart.js, HTMX)
+- [ ] 05-02-PLAN.md — Full dashboard: signal card, price table, gap display, charts, HTMX live refresh
+- [ ] 05-03-PLAN.md — Human verification checkpoint
 
 ### Phase 6: Telegram Alerts
 **Goal**: Users receive timely Telegram notifications when signals change or prices move significantly, with signal context and disclaimers
@@ -160,7 +164,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 2. Vietnamese Gold Price Scraping | 0/3 | Complete    | 2026-03-24 |
 | 3. Gap Analysis & Price Charts | 0/2 | Complete    | 2026-03-24 |
 | 4. Signal Engine Core | 3/4 | Complete    | 2026-03-24 |
-| 5. Web Dashboard | TBD | Not started | - |
+| 5. Web Dashboard | 0/3 | Planning done | - |
 | 6. Telegram Alerts | TBD | Not started | - |
 | 7. Macro Indicators | TBD | Not started | - |
 | 8. State Bank Policy & Seasonal Factors | TBD | Not started | - |
