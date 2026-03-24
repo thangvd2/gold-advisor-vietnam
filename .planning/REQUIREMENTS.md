@@ -15,7 +15,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **DATA-04**: User can see SJC-international price gap displayed in VND and as percentage, with historical trend (1W/1M/3M/1Y)
 - [x] **DATA-05**: User can see buy/sell spread for SJC bars and ring gold at each dealer
 - [x] **DATA-06**: System validates prices across sources and flags stale, missing, or anomalous data
-- [ ] **DATA-07**: User can view price charts for SJC bars, ring gold, and international gold across 1D/1W/1M/1Y timeframes
+- [x] **DATA-07**: User can view price charts for SJC bars, ring gold, and international gold across 1D/1W/1M/1Y timeframes
 
 ### Signal Engine
 
@@ -81,7 +81,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-04 | Phase 3 | Complete |
 | DATA-05 | Phase 2 | Complete |
 | DATA-06 | Phase 1 | Complete |
-| DATA-07 | Phase 3 | Pending |
+| DATA-07 | Phase 3 | Complete |
 | SIG-01 | Phase 4 | Pending |
 | SIG-02 | Phase 4 | Pending |
 | SIG-03 | Phase 8 | Pending |
