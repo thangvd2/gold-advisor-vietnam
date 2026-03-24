@@ -1,5 +1,6 @@
 """APScheduler job definitions for periodic gold price fetching."""
 
+import asyncio
 import logging
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -8,6 +9,30 @@ from src.config import Settings
 from src.ingestion.fetchers.fx_rate import FxRateFetcher
 
 logger = logging.getLogger(__name__)
+
+_dispatcher = None
+
+
+def check_and_dispatch_alerts(settings: Settings) -> None:
+    global _dispatcher
+
+    try:
+        from src.alerts.dispatcher import AlertDispatcher
+        from src.engine.pipeline import compute_signal
+        from src.engine.types import SignalMode
+
+        if _dispatcher is None:
+            _dispatcher = AlertDispatcher()
+
+        signal = compute_signal(settings.database_url, SignalMode.SAVER)
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(_dispatcher.check_signal(signal))
+        finally:
+            loop.close()
+    except Exception:
+        logger.exception("Alert dispatch failed")
 
 
 def start_scheduler(
@@ -29,9 +54,17 @@ def start_scheduler(
         id="gold_price_fetch",
         replace_existing=True,
     )
+    scheduler.add_job(
+        check_and_dispatch_alerts,
+        "interval",
+        minutes=settings.fetch_interval_minutes,
+        args=[settings],
+        id="alert_dispatch",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
-        "Scheduler started: gold_price_fetch every %d minutes",
+        "Scheduler started: gold_price_fetch + alert_dispatch every %d minutes",
         settings.fetch_interval_minutes,
     )
 

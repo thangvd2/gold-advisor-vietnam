@@ -20,6 +20,7 @@ from src.ingestion.scrapers.sjc import SJCScraper
 from src.ingestion.scrapers.pnj import PNJScraper
 from src.ingestion.scrapers.btmc import BTMCScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
+from src.alerts.bot import start_bot, stop_bot
 from src.storage.database import init_db
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -44,8 +45,10 @@ async def lifespan(app: FastAPI):
     sources = [gold_fetcher] + vn_scrapers
 
     start_scheduler(app_state, sources, fx_fetcher, settings)
+    start_bot(settings.database_url)
     set_app_state(app_state)
     yield
+    stop_bot()
     stop_scheduler(app_state)
 
 

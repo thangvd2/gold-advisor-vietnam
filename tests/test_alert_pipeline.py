@@ -24,6 +24,14 @@ def _make_signal(
 
 
 class TestCheckAndDispatchAlerts:
+    @pytest.fixture(autouse=True)
+    def reset_dispatcher(self):
+        import src.ingestion.scheduler as sched
+
+        sched._dispatcher = None
+        yield
+        sched._dispatcher = None
+
     def test_creates_dispatcher(self):
         from src.ingestion.scheduler import check_and_dispatch_alerts
 
@@ -31,8 +39,8 @@ class TestCheckAndDispatchAlerts:
         settings.database_url = "sqlite+aiosqlite:///test.db"
 
         with (
-            patch("src.ingestion.scheduler.compute_signal") as mock_signal,
-            patch("src.ingestion.scheduler.AlertDispatcher") as mock_dispatcher_cls,
+            patch("src.engine.pipeline.compute_signal") as mock_signal,
+            patch("src.alerts.dispatcher.AlertDispatcher") as mock_dispatcher_cls,
         ):
             mock_signal.return_value = _make_signal(confidence=0)
             mock_dispatcher = MagicMock()
@@ -52,8 +60,8 @@ class TestCheckAndDispatchAlerts:
         signal = _make_signal(Recommendation.BUY, 70)
 
         with (
-            patch("src.ingestion.scheduler.compute_signal", return_value=signal),
-            patch("src.ingestion.scheduler.AlertDispatcher") as mock_cls,
+            patch("src.engine.pipeline.compute_signal", return_value=signal),
+            patch("src.alerts.dispatcher.AlertDispatcher") as mock_cls,
         ):
             mock_dispatcher = MagicMock()
             mock_dispatcher.check_signal = AsyncMock(return_value=True)
@@ -72,8 +80,8 @@ class TestCheckAndDispatchAlerts:
         signal = _make_signal(Recommendation.HOLD, 0)
 
         with (
-            patch("src.ingestion.scheduler.compute_signal", return_value=signal),
-            patch("src.ingestion.scheduler.AlertDispatcher") as mock_cls,
+            patch("src.engine.pipeline.compute_signal", return_value=signal),
+            patch("src.alerts.dispatcher.AlertDispatcher") as mock_cls,
         ):
             mock_dispatcher = MagicMock()
             mock_dispatcher.check_signal = AsyncMock(return_value=False)
@@ -92,9 +100,9 @@ class TestCheckAndDispatchAlerts:
         signal = _make_signal(Recommendation.BUY, 70)
 
         with (
-            patch("src.ingestion.scheduler.compute_signal", return_value=signal),
-            patch("src.ingestion.scheduler.SUBSCRIBED_CHATS", set()),
-            patch("src.ingestion.scheduler.AlertDispatcher") as mock_cls,
+            patch("src.engine.pipeline.compute_signal", return_value=signal),
+            patch("src.alerts.bot.SUBSCRIBED_CHATS", set()),
+            patch("src.alerts.dispatcher.AlertDispatcher") as mock_cls,
         ):
             mock_dispatcher = MagicMock()
             mock_dispatcher.check_signal = AsyncMock(return_value=False)
@@ -111,10 +119,9 @@ class TestCheckAndDispatchAlerts:
 
         with (
             patch(
-                "src.ingestion.scheduler.compute_signal",
-                side_effect=Exception("DB error"),
+                "src.engine.pipeline.compute_signal", side_effect=Exception("DB error")
             ),
-            patch("src.ingestion.scheduler.AlertDispatcher") as mock_cls,
+            patch("src.alerts.dispatcher.AlertDispatcher") as mock_cls,
         ):
             mock_dispatcher = MagicMock()
             mock_dispatcher.check_signal = AsyncMock()
@@ -143,7 +150,8 @@ class TestSchedulerIntegration:
 
 
 class TestLifespanWiring:
-    def test_start_bot_called_in_lifespan(self):
+    @pytest.mark.asyncio
+    async def test_start_bot_called_in_lifespan(self):
         from src.api.main import lifespan
 
         settings_mock = MagicMock()
@@ -168,7 +176,7 @@ class TestLifespanWiring:
             from fastapi import FastAPI
 
             app = FastAPI(lifespan=lifespan)
-            with lifespan(app):
+            async with lifespan(app):
                 pass
 
         mock_start_bot.assert_called_once()
