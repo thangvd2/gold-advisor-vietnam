@@ -1,18 +1,15 @@
 """Normalizer pipeline: fetch → convert → store → quality check."""
 
 import logging
-from datetime import datetime, timezone
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import Settings
 from src.ingestion.fetchers.base import DataSource
 from src.ingestion.fetchers.fx_rate import FxRateFetcher
-from src.ingestion.models import FetchedPrice, convert_usd_to_vnd_per_luong
+from src.ingestion.models import convert_usd_to_vnd_per_luong
 from src.ingestion.quality import check_anomaly, check_missing, run_quality_checks
 from src.storage.database import async_session
-from src.storage.models import PriceRecord
 from src.storage.repository import save_price
 
 logger = logging.getLogger(__name__)
