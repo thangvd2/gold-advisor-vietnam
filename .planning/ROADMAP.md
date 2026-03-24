@@ -79,7 +79,12 @@ Plans:
   2. Each signal includes a one-line reasoning explanation (e.g., "Gap narrowed to 2.8% vs 30-day avg 4.5% — favorable buy conditions")
   3. Selecting Saver mode produces accumulation-oriented guidance; selecting Trader mode produces timing-precision-focused signals with different confidence weighting
   4. Signals are stored with full context (inputs, confidence breakdown, mode) for historical analysis
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Signal types + gap/spread/trend factors + composite scorer (SIG-01)
+- [ ] 04-02-PLAN.md — Reasoning generator + Saver/Trader modes + signal persistence (SIG-02, SIG-06)
+- [ ] 04-03-PLAN.md — Signal pipeline orchestrator + API endpoints + FastAPI wiring (SIG-01, SIG-02, SIG-06)
 
 ### Phase 5: Web Dashboard
 **Goal**: Users can view all current data (dealer prices, gap tracker, signal with confidence and reasoning, price charts) on a mobile-responsive web dashboard
@@ -153,7 +158,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 1. Project Foundation & International Data | 0/3 | Complete    | 2026-03-24 |
 | 2. Vietnamese Gold Price Scraping | 0/3 | Complete    | 2026-03-24 |
 | 3. Gap Analysis & Price Charts | 0/2 | Complete    | 2026-03-24 |
-| 4. Signal Engine Core | TBD | Not started | - |
+| 4. Signal Engine Core | TBD | Ready to execute | - |
 | 5. Web Dashboard | TBD | Not started | - |
 | 6. Telegram Alerts | TBD | Not started | - |
 | 7. Macro Indicators | TBD | Not started | - |
