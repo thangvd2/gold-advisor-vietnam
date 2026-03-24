@@ -100,7 +100,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Dashboard data API + template/static infrastructure (Tailwind, Chart.js, HTMX)
+- [x] 05-01-PLAN.md — Dashboard data API + template/static infrastructure (Tailwind, Chart.js, HTMX)
 - [ ] 05-02-PLAN.md — Full dashboard: signal card, price table, gap display, charts, HTMX live refresh
 - [ ] 05-03-PLAN.md — Human verification checkpoint
 

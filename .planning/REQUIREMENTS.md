@@ -28,7 +28,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Delivery & Interface
 
-- [ ] **DEL-01**: User can access a mobile-responsive web dashboard showing current prices, gap, signal, confidence, reasoning, charts, and macro indicators
+- [x] **DEL-01**: User can access a mobile-responsive web dashboard showing current prices, gap, signal, confidence, reasoning, charts, and macro indicators
 - [ ] **DEL-02**: User receives Telegram push notifications on signal changes and significant price movements
 - [ ] **DEL-03**: User can read aggregated market news feed including gold market news and State Bank policy announcements
 
@@ -88,7 +88,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIG-04 | Phase 8 | Pending |
 | SIG-05 | Phase 7 | Pending |
 | SIG-06 | Phase 4 | Complete |
-| DEL-01 | Phase 5 | Pending |
+| DEL-01 | Phase 5 | Complete |
 | DEL-02 | Phase 6 | Pending |
 | DEL-03 | Phase 9 | Pending |
 
