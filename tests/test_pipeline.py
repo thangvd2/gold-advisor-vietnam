@@ -75,9 +75,20 @@ async def _seed_full_gap_data(
     session_factory: async_sessionmaker[AsyncSession],
     days: int = 10,
 ) -> None:
-    """Seed enough data for gap calculation with historical context."""
+    """Seed enough data for gap calculation with historical context.
+
+    Each dealer has different buy/sell prices so per-dealer spread is non-zero:
+    - sjc: buy=193M, sell=195M → spread_pct = 1.03%
+    - pnj: buy=194M, sell=196M → spread_pct = 1.02%
+    - doji: buy=193.5M, sell=195.5M → spread_pct = 1.02%
+    """
     now = datetime.now(timezone.utc)
     records = []
+    dealer_prices = {
+        "sjc": (193_000_000, 195_000_000),
+        "pnj": (194_000_000, 196_000_000),
+        "doji": (193_500_000, 195_500_000),
+    }
     for day in range(days):
         ts = now - timedelta(days=days - 1 - day)
         # International price
@@ -90,17 +101,19 @@ async def _seed_full_gap_data(
                 timestamp=ts,
             )
         )
-        # Domestic prices from multiple dealers
-        for dealer in ("sjc", "pnj", "doji"):
+        # Domestic prices from multiple dealers (each with different buy/sell)
+        for dealer, (buy, sell) in dealer_prices.items():
             records.append(
                 _make_record(
                     source=dealer,
                     product_type="sjc_bar",
-                    sell_price=195_000_000,
+                    sell_price=sell,
                     timestamp=ts,
                     currency="VND",
                 )
             )
+            # Override buy_price separately for spread calculation
+            records[-1].buy_price = buy
     await _seed_records(session_factory, records)
 
 
@@ -178,3 +191,89 @@ class TestComputeSignal:
         assert signal.gap_pct is not None
         assert signal.gap_vnd > 0
         assert signal.gap_pct > 0
+
+
+class TestModeWeightsWiring:
+    @pytest.mark.asyncio
+    async def test_saver_mode_applies_correct_weights(self, db_path):
+        from src.engine.pipeline import compute_signal
+        from src.engine.types import SignalMode
+
+        await _seed_full_gap_data(db_path["session_factory"])
+        signal = compute_signal(db_path["path"], mode=SignalMode.SAVER)
+
+        factor_weights = {f.name: f.weight for f in signal.factors}
+        assert factor_weights["gap"] == pytest.approx(0.4)
+        assert factor_weights["spread"] == pytest.approx(0.1)
+        assert factor_weights["trend"] == pytest.approx(0.5)
+
+    @pytest.mark.asyncio
+    async def test_trader_mode_applies_correct_weights(self, db_path):
+        from src.engine.pipeline import compute_signal
+        from src.engine.types import SignalMode
+
+        await _seed_full_gap_data(db_path["session_factory"])
+        signal = compute_signal(db_path["path"], mode=SignalMode.TRADER)
+
+        factor_weights = {f.name: f.weight for f in signal.factors}
+        assert factor_weights["gap"] == pytest.approx(0.6)
+        assert factor_weights["spread"] == pytest.approx(0.3)
+        assert factor_weights["trend"] == pytest.approx(0.1)
+
+    @pytest.mark.asyncio
+    async def test_same_data_different_modes_produce_different_scores(self, db_path):
+        from src.engine.pipeline import compute_signal
+        from src.engine.types import SignalMode
+
+        await _seed_full_gap_data(db_path["session_factory"])
+        saver_signal = compute_signal(db_path["path"], mode=SignalMode.SAVER)
+        trader_signal = compute_signal(db_path["path"], mode=SignalMode.TRADER)
+
+        assert saver_signal.confidence != trader_signal.confidence
+
+
+class TestSpreadDataConnection:
+    @pytest.mark.asyncio
+    async def test_spread_factor_receives_real_data(self, db_path):
+        from src.engine.pipeline import compute_signal
+
+        await _seed_full_gap_data(db_path["session_factory"])
+        signal = compute_signal(db_path["path"])
+
+        spread_factor = next((f for f in signal.factors if f.name == "spread"), None)
+        assert spread_factor is not None
+        assert spread_factor.direction != 0.0
+
+    @pytest.mark.asyncio
+    async def test_spread_factor_zero_when_no_dealer_data(self, db_path):
+        from src.engine.pipeline import compute_signal
+
+        signal = compute_signal(db_path["path"])
+
+        spread_factor = next((f for f in signal.factors if f.name == "spread"), None)
+        if spread_factor is not None:
+            assert spread_factor.confidence == 0.0
+            assert spread_factor.direction == 0.0
+
+
+class TestCalculateDealerSpreads:
+    @pytest.mark.asyncio
+    async def test_returns_list_of_spread_percentages(self, db_path):
+        from src.analysis.gap import calculate_dealer_spreads
+
+        await _seed_full_gap_data(db_path["session_factory"])
+        spreads = calculate_dealer_spreads(db_path["path"])
+
+        assert isinstance(spreads, list)
+        assert len(spreads) == 3
+        for s in spreads:
+            assert isinstance(s, float)
+            assert s > 0
+
+    @pytest.mark.asyncio
+    async def test_returns_empty_list_when_no_data(self, db_path):
+        from src.analysis.gap import calculate_dealer_spreads
+
+        spreads = calculate_dealer_spreads(db_path["path"])
+
+        assert spreads == []

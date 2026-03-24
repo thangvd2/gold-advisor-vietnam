@@ -118,3 +118,16 @@ class TestCompositeEmptyFactors:
         assert signal.recommendation == Recommendation.HOLD
         assert signal.confidence == 0
         assert signal.factors == []
+
+
+class TestCompositeImportsModeThresholds:
+    def test_composite_uses_mode_thresholds_not_local_dict(self):
+        import src.engine.composite as composite_module
+
+        assert not hasattr(composite_module, "THRESHOLDS")
+
+    def test_get_mode_thresholds_produces_correct_behavior(self):
+        from src.engine.modes import get_mode_thresholds
+
+        assert get_mode_thresholds(SignalMode.SAVER) == (0.05, -0.05)
+        assert get_mode_thresholds(SignalMode.TRADER) == (0.25, -0.25)
