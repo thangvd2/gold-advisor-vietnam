@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gold Advisor Vietnam{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        gold: {
+                            50: '#FFF9E6',
+                            100: '#FFF0BF',
+                            200: '#FFE080',
+                            300: '#FFD040',
+                            400: '#F5D76E',
+                            500: '#D4AF37',
+                            600: '#B8941F',
+                            700: '#8B6F14',
+                            800: '#5E4A0D',
+                            900: '#312606',
+                        },
+                        charcoal: {
+                            50: '#F5F5F5',
+                            100: '#E0E0E0',
+                            200: '#B0B0B0',
+                            300: '#808080',
+                            400: '#505050',
+                            500: '#2A2A2A',
+                            600: '#1E1E1E',
+                            700: '#171717',
+                            800: '#111111',
+                            900: '#0A0A0A',
+                        }
+                    },
+                    fontFamily: {
+                        display: ['"DM Serif Display"', 'Georgia', 'serif'],
+                        body: ['"DM Sans"', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/main.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+</head>
+<body class="bg-charcoal-900 text-charcoal-100 font-body min-h-screen antialiased">
+
+    <header class="border-b border-gold-500/20 bg-charcoal-800/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-charcoal-900" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2L12.09 6.26L17 6.27L13.55 9.97L14.18 15.02L10 12.77L5.82 15.02L6.45 9.97L3 6.27L7.91 6.26L10 2Z"/>
+                        </svg>
+                    </div>
+                    <h1 class="font-display text-xl text-gold-400 tracking-wide">Gold Advisor</h1>
+                </div>
+                <nav class="hidden sm:flex items-center gap-6 text-sm text-charcoal-300">
+                    <span class="text-gold-500 font-medium">Dashboard</span>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block scripts %}{% endblock %}
+
+</body>
+</html>

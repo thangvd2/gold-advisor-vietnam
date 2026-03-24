@@ -1,0 +1,59 @@
+:root {
+    --gold: #D4AF37;
+    --gold-light: #F5D76E;
+    --gold-dim: #8B6F14;
+    --charcoal-900: #0A0A0A;
+    --charcoal-800: #111111;
+    --charcoal-700: #171717;
+    --charcoal-600: #1E1E1E;
+    --charcoal-500: #2A2A2A;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-dim) var(--charcoal-700);
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--charcoal-700);
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--gold-dim);
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
+}
+
+::selection {
+    background: var(--gold);
+    color: var(--charcoal-900);
+}
+
+body {
+    background-color: var(--charcoal-900);
+}
+
+.gold-gradient-text {
+    background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dim));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.card-glow {
+    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.1),
+                0 4px 24px rgba(0, 0, 0, 0.4);
+}
+
+.card-glow:hover {
+    box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.25),
+                0 8px 32px rgba(0, 0, 0, 0.5);
+}

@@ -1,6 +1,9 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from src.api.routes.health import router as health_router, set_app_state
 from src.api.routes.quality import router as quality_router
@@ -18,6 +21,9 @@ from src.ingestion.scrapers.pnj import PNJScraper
 from src.ingestion.scrapers.btmc import BTMCScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
 from src.storage.database import init_db
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 app_state: dict = {}
 
@@ -44,9 +50,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Gold Advisor Vietnam", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 app.include_router(health_router)
 app.include_router(quality_router, prefix="/quality", tags=["quality"])
 app.include_router(gap_router, prefix="/api/gap", tags=["gap"])
 app.include_router(prices_router, prefix="/api/prices", tags=["prices"])
 app.include_router(signals_router, prefix="/api/signals", tags=["signals"])
 app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
+
+
+@app.get("/")
+async def root(request: Request):
+    return templates.TemplateResponse(request, "dashboard.html", context={})
