@@ -85,9 +85,9 @@ async def _seed_full_gap_data(
     now = datetime.now(timezone.utc)
     records = []
     dealer_prices = {
-        "sjc": (193_000_000, 195_000_000),
-        "pnj": (194_000_000, 196_000_000),
-        "doji": (193_500_000, 195_500_000),
+        "sjc": (194_800_000, 195_000_000),
+        "pnj": (195_800_000, 196_000_000),
+        "doji": (195_300_000, 195_500_000),
     }
     for day in range(days):
         ts = now - timedelta(days=days - 1 - day)

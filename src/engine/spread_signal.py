@@ -3,9 +3,11 @@ from statistics import mean, stdev
 from src.engine.types import SignalFactor
 
 
-def compute_spread_signal(dealer_spreads: list[float]) -> SignalFactor:
+def compute_spread_signal(
+    dealer_spreads: list[float], weight: float = 0.2
+) -> SignalFactor:
     if not dealer_spreads:
-        return SignalFactor(name="spread", direction=0.0, weight=0.2, confidence=0.0)
+        return SignalFactor(name="spread", direction=0.0, weight=weight, confidence=0.0)
 
     avg_spread = mean(dealer_spreads)
 
@@ -28,5 +30,5 @@ def compute_spread_signal(dealer_spreads: list[float]) -> SignalFactor:
         confidence = 0.3
 
     return SignalFactor(
-        name="spread", direction=direction, weight=0.2, confidence=confidence
+        name="spread", direction=direction, weight=weight, confidence=confidence
     )

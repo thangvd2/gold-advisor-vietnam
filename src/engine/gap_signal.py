@@ -1,13 +1,15 @@
 from src.engine.types import SignalFactor
 
 
-def compute_gap_signal(current_gap: dict, historical_gaps: list[dict]) -> SignalFactor:
+def compute_gap_signal(
+    current_gap: dict, historical_gaps: list[dict], weight: float = 0.5
+) -> SignalFactor:
     gap_pct = current_gap.get("gap_pct")
     if gap_pct is None:
-        return SignalFactor(name="gap", direction=0.0, weight=0.5, confidence=0.0)
+        return SignalFactor(name="gap", direction=0.0, weight=weight, confidence=0.0)
 
     if not historical_gaps:
-        return SignalFactor(name="gap", direction=0.0, weight=0.5, confidence=0.0)
+        return SignalFactor(name="gap", direction=0.0, weight=weight, confidence=0.0)
 
     ma_30d = None
     ma_7d = None
@@ -21,7 +23,7 @@ def compute_gap_signal(current_gap: dict, historical_gaps: list[dict]) -> Signal
 
     reference_ma = ma_30d if ma_30d is not None else ma_7d
     if reference_ma is None or reference_ma == 0:
-        return SignalFactor(name="gap", direction=0.0, weight=0.5, confidence=0.0)
+        return SignalFactor(name="gap", direction=0.0, weight=weight, confidence=0.0)
 
     deviation_pct = (gap_pct - reference_ma) / reference_ma
     direction = max(-1.0, min(1.0, -deviation_pct * 5.0))
@@ -32,5 +34,5 @@ def compute_gap_signal(current_gap: dict, historical_gaps: list[dict]) -> Signal
         confidence *= 0.7
 
     return SignalFactor(
-        name="gap", direction=direction, weight=0.5, confidence=confidence
+        name="gap", direction=direction, weight=weight, confidence=confidence
     )

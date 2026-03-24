@@ -1,11 +1,7 @@
 from datetime import datetime
 
+from src.engine.modes import get_mode_thresholds
 from src.engine.types import Signal, SignalFactor, Recommendation, SignalMode
-
-THRESHOLDS = {
-    SignalMode.SAVER: (0.05, -0.05),
-    SignalMode.TRADER: (0.25, -0.25),
-}
 
 
 def compute_composite_signal(
@@ -23,7 +19,7 @@ def compute_composite_signal(
 
     raw_score = sum(f.direction * f.weight for f in factors)
 
-    buy_threshold, sell_threshold = THRESHOLDS.get(mode, (0.15, -0.15))
+    buy_threshold, sell_threshold = get_mode_thresholds(mode)
 
     if raw_score > buy_threshold:
         recommendation = Recommendation.BUY

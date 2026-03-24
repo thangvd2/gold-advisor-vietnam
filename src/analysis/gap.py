@@ -10,6 +10,26 @@ RANGE_MAP = {
 }
 
 
+def calculate_dealer_spreads(db_path: str) -> list[float]:
+    con = get_duckdb_connection(db_path)
+    try:
+        cursor = con.execute("""
+            WITH latest_per_dealer AS (
+                SELECT source, sell_price, buy_price,
+                       ROW_NUMBER() OVER (PARTITION BY source ORDER BY timestamp DESC) as rn
+                FROM db.price_history
+                WHERE product_type = 'sjc_bar'
+                  AND sell_price IS NOT NULL
+            )
+            SELECT (sell_price - buy_price) / sell_price * 100 as spread_pct
+            FROM latest_per_dealer
+            WHERE rn = 1 AND buy_price IS NOT NULL AND sell_price > 0
+        """)
+        return [float(row[0]) for row in cursor.fetchall()]
+    finally:
+        con.close()
+
+
 def calculate_current_gap(db_path: str | str) -> dict | None:
     con = get_duckdb_connection(db_path)
     try:

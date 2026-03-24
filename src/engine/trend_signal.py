@@ -6,7 +6,7 @@ MIN_DATA_POINTS = 7
 
 
 def compute_trend_signal(
-    current_gap: dict, historical_gaps: list[dict]
+    current_gap: dict, historical_gaps: list[dict], weight: float = 0.3
 ) -> SignalFactor:
     valid_gaps = [
         entry["gap_vnd"]
@@ -15,7 +15,7 @@ def compute_trend_signal(
     ]
 
     if len(valid_gaps) < MIN_DATA_POINTS:
-        return SignalFactor(name="trend", direction=0.0, weight=0.3, confidence=0.0)
+        return SignalFactor(name="trend", direction=0.0, weight=weight, confidence=0.0)
 
     mid = len(valid_gaps) // 2
     first_half_avg = mean(valid_gaps[:mid])
@@ -48,5 +48,5 @@ def compute_trend_signal(
         confidence = 0.1
 
     return SignalFactor(
-        name="trend", direction=direction, weight=0.3, confidence=confidence
+        name="trend", direction=direction, weight=weight, confidence=confidence
     )
