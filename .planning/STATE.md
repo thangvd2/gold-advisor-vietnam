@@ -4,12 +4,12 @@ milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
 stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-03-24T18:07:03.800Z"
+last_updated: "2026-03-24T18:13:13.942Z"
 progress:
   total_phases: 9
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 1 (project-foundation-international-data) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -46,6 +46,7 @@ Plan: 2 of 3
 - Trend: —
 
 *Updated after each plan completion*
+| Phase 01 P02 | 5min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -59,6 +60,8 @@ Recent decisions affecting current work:
 - Signal engine: Deterministic (no LLM) for core computation; LLM deferred to enrichment
 - [Phase 01]: No CORS middleware yet, added when dashboard needs it in Phase 5
 - [Phase 01]: greenlet added as implicit dependency for SQLAlchemy async sessions
+- [Phase 01]: yfinance calls wrapped in asyncio.to_thread() to avoid blocking event loop
+- [Phase 01]: Repository functions accept AsyncSession as first arg for testability via dependency injection
 
 ### Pending Todos
 
