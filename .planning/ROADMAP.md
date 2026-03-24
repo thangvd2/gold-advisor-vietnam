@@ -82,7 +82,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Signal types + gap/spread/trend factors + composite scorer (SIG-01)
+- [x] 04-01-PLAN.md — Signal types + gap/spread/trend factors + composite scorer (SIG-01)
 - [ ] 04-02-PLAN.md — Reasoning generator + Saver/Trader modes + signal persistence (SIG-02, SIG-06)
 - [ ] 04-03-PLAN.md — Signal pipeline orchestrator + API endpoints + FastAPI wiring (SIG-01, SIG-02, SIG-06)
 

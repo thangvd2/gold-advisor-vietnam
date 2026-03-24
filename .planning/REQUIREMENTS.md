@@ -19,7 +19,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Signal Engine
 
-- [ ] **SIG-01**: User receives a Buy/Hold/Sell signal with a confidence level (0-100%) based on multi-factor analysis
+- [x] **SIG-01**: User receives a Buy/Hold/Sell signal with a confidence level (0-100%) based on multi-factor analysis
 - [ ] **SIG-02**: User sees a one-line reasoning explanation with each signal (e.g., "Gap narrowed to 2.8% vs 30-day avg 4.5% — favorable buy conditions")
 - [ ] **SIG-03**: Signal engine factors in State Bank policy events (import approvals, gold auctions, interventions) as an override factor
 - [ ] **SIG-04**: Signal engine factors in Vietnamese seasonal demand patterns (pre-Tet spike, post-Tet weakness, wedding season, Vu Lan, ghost month)
@@ -82,7 +82,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-05 | Phase 2 | Complete |
 | DATA-06 | Phase 1 | Complete |
 | DATA-07 | Phase 3 | Complete |
-| SIG-01 | Phase 4 | Pending |
+| SIG-01 | Phase 4 | Complete |
 | SIG-02 | Phase 4 | Pending |
 | SIG-03 | Phase 8 | Pending |
 | SIG-04 | Phase 8 | Pending |

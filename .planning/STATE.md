@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
+status: Executing Phase 4
 stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-03-24T19:15:54.194Z"
+last_updated: "2026-03-24T19:24:15.047Z"
 progress:
   total_phases: 9
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 11
+  completed_plans: 9
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Users buy lower and sell higher than they would with blind timing, and they understand *why*.
-**Current focus:** Phase 3 — gap-analysis-price-charts
+**Current focus:** Phase 4 — signal-engine-core
 
 ## Current Position
 
-Phase: 4
-Plan: Not started
+Phase: 4 (signal-engine-core) — EXECUTING
+Plan: 1 of 3
 
 ## Performance Metrics
 
@@ -83,6 +83,7 @@ Recent decisions affecting current work:
 - [Phase 03]: Sync DuckDB calls wrapped in asyncio.to_thread() to avoid blocking event loop
 - [Phase 03]: Epoch-based bucketing via DuckDB to_timestamp for adaptive price chart resolution
 - [Phase 03]: price_vnd field for xau_usd charts to match gap calculation convention
+- [Phase 04]: Composite thresholds: Saver (0.05/-0.05), Trader (0.25/-0.25), default (0.15/-0.15)
 
 ### Pending Todos
 
