@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-03-24T19:51:34.544Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-03-24T19:56:06.989Z"
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 15
-  completed_plans: 13
+  completed_plans: 14
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 5 (web-dashboard) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Plan: 2 of 3
 | Phase 04 P03 | 2 | 2 tasks | 5 files |
 | Phase 04 P04 | 2 | 1 tasks | 8 files |
 | Phase 05 P01 | 4 | 2 tasks | 8 files |
+| Phase 05 P02 | 3 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,9 @@ Recent decisions affecting current work:
 - [Phase 05]: Patch async_session at import location not module source for test mocking
 - [Phase 05]: Gold/charcoal dark theme with DM Serif Display + DM Sans font pairing
 - [Phase 05]: StaticFiles mounted before routes to prevent path conflicts
+- [Phase 05]: HTMX loading spinners in dashboard partials, partial endpoints return 200 with empty-state on error
+- [Phase 05]: Chart.js dark theme with gold accent palette: SJC=#D4AF37, Ring=#F5D76E, Intl=#4A90D9
+- [Phase 05]: Mode toggle via htmx.ajax() re-fetching signal partial with ?mode= query param
 
 ### Pending Todos
 
@@ -111,6 +115,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T19:51:34.541Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-03-24T19:56:06.986Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None

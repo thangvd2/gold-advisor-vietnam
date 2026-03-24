@@ -101,7 +101,7 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — Dashboard data API + template/static infrastructure (Tailwind, Chart.js, HTMX)
-- [ ] 05-02-PLAN.md — Full dashboard: signal card, price table, gap display, charts, HTMX live refresh
+- [x] 05-02-PLAN.md — Full dashboard: signal card, price table, gap display, charts, HTMX live refresh
 - [ ] 05-03-PLAN.md — Human verification checkpoint
 
 ### Phase 6: Telegram Alerts
