@@ -9,8 +9,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Data & Pricing
 
-- [ ] **DATA-01**: User can see live SJC bar buy/sell prices from 5+ dealers (SJC, Doji, PNJ, BTMC, Phú Quý, Mi Hồng), updated every 1-5 minutes
-- [ ] **DATA-02**: User can see live nhẫn trơn (ring gold) buy/sell prices from dealers
+- [x] **DATA-01**: User can see live SJC bar buy/sell prices from 5+ dealers (SJC, Doji, PNJ, BTMC, Phú Quý, Mi Hồng), updated every 1-5 minutes
+- [x] **DATA-02**: User can see live nhẫn trơn (ring gold) buy/sell prices from dealers
 - [x] **DATA-03**: User can see international gold price (XAUUSD) displayed in both USD and VND
 - [ ] **DATA-04**: User can see SJC-international price gap displayed in VND and as percentage, with historical trend (1W/1M/3M/1Y)
 - [ ] **DATA-05**: User can see buy/sell spread for SJC bars and ring gold at each dealer
@@ -75,8 +75,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 2 | Pending |
-| DATA-02 | Phase 2 | Pending |
+| DATA-01 | Phase 2 | Complete |
+| DATA-02 | Phase 2 | Complete |
 | DATA-03 | Phase 1 | Complete |
 | DATA-04 | Phase 3 | Pending |
 | DATA-05 | Phase 2 | Pending |

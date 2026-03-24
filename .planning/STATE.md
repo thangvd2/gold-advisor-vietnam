@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-03-24T18:23:00.849Z"
+status: Ready to execute
+stopped_at: Completed 02-01-PLAN.md
+last_updated: "2026-03-24T18:38:31.806Z"
 progress:
   total_phases: 9
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Users buy lower and sell higher than they would with blind timing, and they understand *why*.
-**Current focus:** Phase 1 — project-foundation-international-data
+**Current focus:** Phase 2 — vietnamese-gold-price-scraping
 
 ## Current Position
 
-Phase: 2
-Plan: Not started
+Phase: 2 (vietnamese-gold-price-scraping) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -65,6 +65,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Repository functions accept AsyncSession as first arg for testability via dependency injection
 - [Phase 01]: Quality checks run after every fetch (not periodically) per PITFALLS.md
 - [Phase 01]: Timezone-naive datetime normalization via _ensure_aware for SQLite compatibility
+- [Phase 02]: Scrapers use @retry decorator with max_retries=2 for resilience
+- [Phase 02]: Normalizer uses source_name property for uniform Fetcher/Scraper name extraction
+- [Phase 02]: Static HTML scraper pattern: httpx+BS4 for DOJI/PhuQuy, Playwright deferred for JS-rendered sites
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T18:20:29.753Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-03-24T18:38:31.700Z
+Stopped at: Completed 02-01-PLAN.md
 Resume file: None
