@@ -17,6 +17,8 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 - [x] Live SJC bar buy/sell prices from 5+ dealers — Validated in Phase 2
 - [x] Live nhẫn trơn (ring gold) buy/sell prices from dealers — Validated in Phase 2
 - [x] Buy/sell spread for SJC bars and ring gold at each dealer — Validated in Phase 2
+- [x] SJC-international price gap in VND and percentage with historical trend — Validated in Phase 3
+- [x] Price charts for all gold products across 1D/1W/1M/1Y — Validated in Phase 3
 
 ### Active
 
