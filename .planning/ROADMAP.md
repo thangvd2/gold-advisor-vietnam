@@ -182,7 +182,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 5. Web Dashboard | 0/3 | Complete    | 2026-03-24 |
 | 6. Telegram Alerts | 3/3 | Complete    | 2026-03-24 |
 | 7. Macro Indicators | 3/3 | Complete    | 2026-03-24 |
-| 8. State Bank Policy & Seasonal Factors | 3/3 | Complete    | 2026-03-25 |
+| 8. State Bank Policy & Seasonal Factors | 3/3 | Complete    | 2026-03-24 |
 | 9. Market News Feed | TBD | Not started | - |
 
 ---

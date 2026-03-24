@@ -25,6 +25,8 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 - [x] Mobile-responsive web dashboard with prices, gap, signal, charts — Validated in Phase 5
 - [x] Telegram push notifications on signals and price movements — Validated in Phase 6
 - [x] Macro indicator dashboard (USD/VND, real rates, DXY, gold trend) — Validated in Phase 7
+- [x] State Bank policy monitoring as signal override — Validated in Phase 8
+- [x] Vietnamese seasonal demand patterns (Tet, wedding, Vu Lan) — Validated in Phase 8
 
 ### Active
 
