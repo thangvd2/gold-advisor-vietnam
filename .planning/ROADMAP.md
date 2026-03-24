@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Gap Analysis & Price Charts** - Compute and visualize the SJC-international price gap (completed 2026-03-24)
 - [x] **Phase 4: Signal Engine Core** - Generate Buy/Hold/Sell signals with confidence and reasoning (completed 2026-03-24)
 - [x] **Phase 5: Web Dashboard** - Mobile-responsive dashboard showing prices, gap, signal, and charts (completed 2026-03-24)
-- [ ] **Phase 6: Telegram Alerts** - Push notifications on signal changes and price movements
+- [x] **Phase 6: Telegram Alerts** - Push notifications on signal changes and price movements (completed 2026-03-24)
 - [ ] **Phase 7: Macro Indicators** - Factor USD/VND, interest rates, DXY, and global gold trend into signals
 - [ ] **Phase 8: State Bank Policy & Seasonal Factors** - Incorporate regulatory events and Vietnamese seasonal demand patterns
 - [ ] **Phase 9: Market News Feed** - Aggregated gold market news and State Bank policy announcements
@@ -170,7 +170,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 3. Gap Analysis & Price Charts | 0/2 | Complete    | 2026-03-24 |
 | 4. Signal Engine Core | 3/4 | Complete    | 2026-03-24 |
 | 5. Web Dashboard | 0/3 | Complete    | 2026-03-24 |
-| 6. Telegram Alerts | 3/3 | Complete    | 2026-03-25 |
+| 6. Telegram Alerts | 3/3 | Complete    | 2026-03-24 |
 | 7. Macro Indicators | TBD | Not started | - |
 | 8. State Bank Policy & Seasonal Factors | TBD | Not started | - |
 | 9. Market News Feed | TBD | Not started | - |

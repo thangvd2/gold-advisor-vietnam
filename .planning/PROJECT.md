@@ -23,6 +23,7 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 - [x] One-line reasoning explanation with each signal — Validated in Phase 4
 - [x] Saver/Trader mode with adapted signals — Validated in Phase 4
 - [x] Mobile-responsive web dashboard with prices, gap, signal, charts — Validated in Phase 5
+- [x] Telegram push notifications on signals and price movements — Validated in Phase 6
 
 ### Active
 
