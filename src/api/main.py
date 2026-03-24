@@ -7,6 +7,7 @@ from src.api.routes.quality import router as quality_router
 from src.api.routes.gap import router as gap_router
 from src.api.routes.prices import router as prices_router
 from src.api.routes.signals import router as signals_router
+from src.api.routes.dashboard import router as dashboard_router
 from src.config import Settings
 from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
 from src.ingestion.fetchers.vietcombank import VietcombankFxRateFetcher
@@ -48,3 +49,4 @@ app.include_router(quality_router, prefix="/quality", tags=["quality"])
 app.include_router(gap_router, prefix="/api/gap", tags=["gap"])
 app.include_router(prices_router, prefix="/api/prices", tags=["prices"])
 app.include_router(signals_router, prefix="/api/signals", tags=["signals"])
+app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])

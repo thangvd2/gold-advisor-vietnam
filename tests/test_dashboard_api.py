@@ -39,10 +39,8 @@ async def dashboard_test_db(tmp_path):
 
     with (
         patch("src.api.routes.dashboard.get_settings", mock_settings),
-        patch("src.storage.database.settings", mock_settings()),
-        patch("src.storage.database.engine", engine),
         patch(
-            "src.storage.database.async_session",
+            "src.api.routes.dashboard.async_session",
             async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False),
         ),
     ):
