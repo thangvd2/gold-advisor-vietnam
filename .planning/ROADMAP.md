@@ -13,7 +13,7 @@ From zero to a working gold timing advisor for Vietnamese users. The journey sta
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Project Foundation & International Data** - Ingest international gold prices with data quality monitoring (completed 2026-03-24)
-- [ ] **Phase 2: Vietnamese Gold Price Scraping** - Scrape SJC bars, ring gold, and spreads from 5+ dealers
+- [x] **Phase 2: Vietnamese Gold Price Scraping** - Scrape SJC bars, ring gold, and spreads from 5+ dealers (completed 2026-03-24)
 - [ ] **Phase 3: Gap Analysis & Price Charts** - Compute and visualize the SJC-international price gap
 - [ ] **Phase 4: Signal Engine Core** - Generate Buy/Hold/Sell signals with confidence and reasoning
 - [ ] **Phase 5: Web Dashboard** - Mobile-responsive dashboard showing prices, gap, signal, and charts
@@ -49,7 +49,7 @@ Plans:
   2. Ring gold (nhẫn trơn) prices are scraped alongside SJC bar prices from the same dealers
   3. Buy/sell spreads are calculated and stored for each dealer and product type
   4. Individual scraper failures don't crash the system or block other scrapers — failures are logged and surfaced in data quality checks
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 02-01-PLAN.md — Static HTML scrapers for DOJI & Phu Quý (httpx + BeautifulSoup)
@@ -147,7 +147,7 @@ Phases execute in numeric order. With parallelization enabled:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Foundation & International Data | 0/3 | Complete    | 2026-03-24 |
-| 2. Vietnamese Gold Price Scraping | 0/3 | Not started | - |
+| 2. Vietnamese Gold Price Scraping | 0/3 | Complete    | 2026-03-24 |
 | 3. Gap Analysis & Price Charts | TBD | Not started | - |
 | 4. Signal Engine Core | TBD | Not started | - |
 | 5. Web Dashboard | TBD | Not started | - |

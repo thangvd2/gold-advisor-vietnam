@@ -14,6 +14,9 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 
 - [x] International gold price (XAUUSD) displayed in both USD and VND — Validated in Phase 1
 - [x] System validates prices across sources and flags stale, missing, or anomalous data — Validated in Phase 1
+- [x] Live SJC bar buy/sell prices from 5+ dealers — Validated in Phase 2
+- [x] Live nhẫn trơn (ring gold) buy/sell prices from dealers — Validated in Phase 2
+- [x] Buy/sell spread for SJC bars and ring gold at each dealer — Validated in Phase 2
 
 ### Active
 
