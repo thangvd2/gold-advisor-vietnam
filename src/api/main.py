@@ -9,6 +9,8 @@ from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
 from src.ingestion.fetchers.vietcombank import VietcombankFxRateFetcher
 from src.ingestion.scrapers.doji import DojiScraper
 from src.ingestion.scrapers.phuquy import PhuQuyScraper
+from src.ingestion.scrapers.sjc import SJCScraper
+from src.ingestion.scrapers.pnj import PNJScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
 from src.storage.database import init_db
 
@@ -24,7 +26,9 @@ async def lifespan(app: FastAPI):
     fx_fetcher = VietcombankFxRateFetcher()
     doji = DojiScraper()
     phuquy = PhuQuyScraper()
-    vn_scrapers = [doji, phuquy]
+    sjc = SJCScraper()
+    pnj = PNJScraper()
+    vn_scrapers = [doji, phuquy, sjc, pnj]
     sources = [gold_fetcher] + vn_scrapers
 
     start_scheduler(app_state, sources, fx_fetcher, settings)
