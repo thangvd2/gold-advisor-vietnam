@@ -33,7 +33,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. International gold price (XAUUSD) is fetched every 5 minutes, converted to VND, and stored with timestamps and source metadata
   3. Data quality checks run after each fetch — stale data (>15 min old), missing values, and anomalous price jumps are flagged in logs and surfaced via an API endpoint
   4. Database schema supports storing time-series price records with source tracking and validation status
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — FastAPI app scaffold, SQLite database models, config, health endpoint
+- [ ] 01-02-PLAN.md — Gold price fetcher (yfinance), USD/VND FX fetcher (Vietcombank), repository layer
+- [ ] 01-03-PLAN.md — Data quality checks, APScheduler integration, quality API, end-to-end pipeline
 
 ### Phase 2: Vietnamese Gold Price Scraping
 **Goal**: System reliably scrapes buy/sell prices from 5+ Vietnamese gold dealers for SJC bars, ring gold (nhẫn trơn), and dealer buy/sell spreads, on a 1-5 minute schedule
@@ -136,7 +141,7 @@ Phases execute in numeric order. With parallelization enabled:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Project Foundation & International Data | TBD | Not started | - |
+| 1. Project Foundation & International Data | 0/3 | Planned | - |
 | 2. Vietnamese Gold Price Scraping | TBD | Not started | - |
 | 3. Gap Analysis & Price Charts | TBD | Not started | - |
 | 4. Signal Engine Core | TBD | Not started | - |
