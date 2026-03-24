@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 08-03-PLAN.md
-last_updated: "2026-03-24T20:31:00.772Z"
+status: Complete
+stopped_at: Completed 09-03-PLAN.md
+last_updated: "2026-03-25T21:00:00.000Z"
 progress:
   total_phases: 9
-  completed_phases: 8
-  total_plans: 24
-  completed_plans: 24
+  completed_phases: 9
+  total_plans: 27
+  completed_plans: 27
 ---
 
 # Project State
@@ -19,51 +19,25 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Users buy lower and sell higher than they would with blind timing, and they understand *why*.
-**Current focus:** Phase 8 — state-bank-policy-seasonal (COMPLETE)
+**Current focus:** All phases complete — v1.0 milestone achieved
 
 ## Current Position
 
-Phase: 09
-Plan: Not started
+Phase: 9 (final)
+Plan: 3 (complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 24
-- Average duration: —
-- Total execution time: 0 hours
+- Total plans completed: 27
+- Total execution time: ~2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
-
-**Recent Trend:**
-
-- Last 5 plans: —
-- Trend: —
-
-*Updated after each plan completion*
-| Phase 01 P02 | 5min | 2 tasks | 8 files |
-| Phase 01 P03 | 5min | 2 tasks | 8 files |
-| Phase 02 P02 | 5min | 2 tasks | 5 files |
-| Phase 02 P03 | 5min | 2 tasks | 6 files |
-| Phase 03 P01 | 475 | 2 tasks | 8 files |
-| Phase 03 P02 | 205 | 2 tasks | 5 files |
-| Phase 04 P02 | 152 | 2 tasks | 7 files |
-| Phase 04 P03 | 2 | 2 tasks | 5 files |
-| Phase 04 P04 | 2 | 1 tasks | 8 files |
-| Phase 05 P01 | 4 | 2 tasks | 8 files |
-| Phase 05 P02 | 3 | 2 tasks | 10 files |
-| Phase 05 P03 | 0 | 1 tasks | 0 files |
-| Phase 06 P01 | 4min | 1 tasks | 5 files |
-| Phase 06 P02 | 3min | 1 tasks | 2 files |
-| Phase 06 P03 | 4min | 1 tasks | 3 files |
-| Phase 08 P01 | 3min | 3 tasks | 2 files |
-| Phase 08 P02 | 5min | 3 tasks | 5 files |
-| Phase 08 P03 | 5min | 5 tasks | 8 files |
+| 09 | 3 | 10 tasks | ~15 min |
 
 ## Accumulated Context
 
@@ -129,19 +103,22 @@ Recent decisions affecting current work:
 - [Phase 08]: Policy confidence caps: high=0.3, medium=0.6, low=1.0
 - [Phase 08]: Policy override applied after seasonal modifier (policy takes priority)
 - [Phase 08]: Seasonal badge only shown for high/very_high demand months
+- [Phase 09]: News feed uses stdlib xml.etree for RSS/Atom parsing (no lxml needed)
+- [Phase 09]: URL-based deduplication via SQLite ON CONFLICT DO NOTHING
+- [Phase 09]: News is display-only, no LLM, no signal influence
+- [Phase 09]: Admin manual news defaults category=state_bank for SBV announcements
+- [Phase 09]: News fetch interval: 30 min (separate from 5-min price fetch)
 
 ### Pending Todos
 
-None yet.
+None — v1.0 complete.
 
 ### Blockers/Concerns
 
-- [Phase 1]: Vietnamese gold shop website structure unverified — each target site (sjc.com.vn, doji.vn, pnj.com.vn, btmc.vn) must be validated during planning
-- [Phase 1]: Signal threshold calibration needs historical gap data analysis — cannot determine optimal thresholds from research alone
-- [Phase 1]: International gold price API selection needed — multiple options (Kitco, MetalPriceAPI, free tiers), must evaluate limits and reliability
+None remaining — all phases complete.
 
 ## Session Continuity
 
-Last session: 2026-03-25T20:30:00.000Z
-Stopped at: Completed 08-03-PLAN.md
+Last session: 2026-03-25T21:00:00.000Z
+Stopped at: Completed 09-03-PLAN.md (v1.0 complete)
 Resume file: None

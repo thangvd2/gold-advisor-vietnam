@@ -20,7 +20,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 6: Telegram Alerts** - Push notifications on signal changes and price movements (completed 2026-03-24)
 - [x] **Phase 7: Macro Indicators** - Factor USD/VND, interest rates, DXY, and global gold trend into signals (completed 2026-03-25)
 - [x] **Phase 8: State Bank Policy & Seasonal Factors** - Incorporate regulatory events and Vietnamese seasonal demand patterns (completed 2026-03-25)
-- [ ] **Phase 9: Market News Feed** - Aggregated gold market news and State Bank policy announcements
+- [x] **Phase 9: Market News Feed** - Aggregated gold market news and State Bank policy announcements (completed 2026-03-25)
 
 ## Phase Details
 
@@ -163,8 +163,13 @@ Plans:
   1. Dashboard displays a news feed of gold market news articles
   2. News feed includes State Bank policy announcements
   3. News items are sorted by recency and relevance to gold pricing
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3/3 plans complete
+
+Plans:
+- [x] 09-01-PLAN.md — News fetcher (RSS feed reader for gold market news)
+- [x] 09-02-PLAN.md — News storage + API endpoints + admin endpoint for manual entries
+- [x] 09-03-PLAN.md — Dashboard news section + scheduler integration
+**UI hint:** yes
 
 ## Progress
 
@@ -183,7 +188,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 6. Telegram Alerts | 3/3 | Complete    | 2026-03-24 |
 | 7. Macro Indicators | 3/3 | Complete    | 2026-03-24 |
 | 8. State Bank Policy & Seasonal Factors | 3/3 | Complete    | 2026-03-24 |
-| 9. Market News Feed | TBD | Not started | - |
+| 9. Market News Feed | 3/3 | Complete    | 2026-03-25 |
 
 ---
 *Roadmap created: 2026-03-25*
