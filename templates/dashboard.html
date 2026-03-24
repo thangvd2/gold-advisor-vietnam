@@ -53,6 +53,13 @@
     </div>
   </div>
 
+  <div id="news-card" hx-get="/dashboard/partials/news" hx-trigger="load, every 30s" hx-swap="innerHTML">
+    <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center">
+      <div class="inline-block w-6 h-6 border-2 border-gold-500/30 border-t-gold-500 rounded-full animate-spin"></div>
+      <p class="text-charcoal-400 text-sm mt-3">Loading news...</p>
+    </div>
+  </div>
+
   <footer class="text-center py-4 text-xs text-charcoal-500 border-t border-charcoal-700/50">
     Gold Advisor Vietnam — Advisory only, not financial advice. Prices may be delayed.
   </footer>

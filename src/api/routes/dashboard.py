@@ -9,7 +9,7 @@ from src.config import Settings
 from src.engine.pipeline import compute_signal
 from src.engine.types import SignalMode
 from src.storage.database import async_session
-from src.storage.repository import get_latest_prices
+from src.storage.repository import get_latest_prices, get_recent_news
 
 from pathlib import Path
 
@@ -331,4 +331,46 @@ async def get_macro_partial(request: Request):
             request,
             "partials/macro_card.html",
             context={"fx_trend": None, "gold_trend": None, "dxy": None},
+        )
+
+
+@router.get("/news")
+async def get_dashboard_news():
+    try:
+        async with async_session() as session:
+            news = await get_recent_news(session, limit=10)
+
+        return [
+            {
+                "id": n.id,
+                "title": n.title,
+                "url": n.url,
+                "source": n.source,
+                "published_at": n.published_at.isoformat() if n.published_at else None,
+                "excerpt": n.excerpt,
+                "category": n.category,
+                "is_manual": n.is_manual,
+            }
+            for n in news
+        ]
+    except Exception:
+        return []
+
+
+@router.get("/partials/news")
+async def get_news_partial(request: Request):
+    try:
+        async with async_session() as session:
+            news = await get_recent_news(session, limit=10)
+
+        return templates.TemplateResponse(
+            request,
+            "partials/news_card.html",
+            context={"news_items": news},
+        )
+    except Exception:
+        return templates.TemplateResponse(
+            request,
+            "partials/news_card.html",
+            context={"news_items": []},
         )

@@ -1,0 +1,45 @@
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+  <div class="p-6">
+    <p class="text-xs uppercase tracking-[0.2em] text-charcoal-300 mb-4 font-medium">Market News</p>
+
+    {% if not news_items %}
+    <div class="text-center py-4">
+      <p class="text-charcoal-400 text-sm">No news available</p>
+    </div>
+    {% else %}
+    <div class="space-y-3">
+      {% for item in news_items %}
+      <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer"
+         class="block group bg-charcoal-800/60 rounded-xl p-4 hover:bg-charcoal-800/90 transition-colors">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1 min-w-0">
+            <h4 class="text-sm font-medium text-charcoal-100 group-hover:text-gold-400 transition-colors line-clamp-2">
+              {{ item.title }}
+            </h4>
+            {% if item.excerpt %}
+            <p class="text-xs text-charcoal-400 mt-1 line-clamp-1">{{ item.excerpt }}</p>
+            {% endif %}
+          </div>
+          {% if item.category == 'state_bank' %}
+          <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-gold-500/15 text-gold-400 border border-gold-500/20">
+            SBV
+          </span>
+          {% elif item.category %}
+          <span class="shrink-0 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-charcoal-700 text-charcoal-400">
+            {{ item.category }}
+          </span>
+          {% endif %}
+        </div>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="text-[11px] text-charcoal-500">{{ item.source }}</span>
+          {% if item.published_at %}
+          <span class="text-charcoal-700">·</span>
+          <span class="text-[11px] text-charcoal-500">{{ item.published_at.strftime('%Y-%m-%d %H:%M') if item.published_at else '' }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
