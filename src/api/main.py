@@ -11,6 +11,7 @@ from src.ingestion.scrapers.doji import DojiScraper
 from src.ingestion.scrapers.phuquy import PhuQuyScraper
 from src.ingestion.scrapers.sjc import SJCScraper
 from src.ingestion.scrapers.pnj import PNJScraper
+from src.ingestion.scrapers.btmc import BTMCScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
 from src.storage.database import init_db
 
@@ -28,7 +29,8 @@ async def lifespan(app: FastAPI):
     phuquy = PhuQuyScraper()
     sjc = SJCScraper()
     pnj = PNJScraper()
-    vn_scrapers = [doji, phuquy, sjc, pnj]
+    btmc = BTMCScraper()
+    vn_scrapers = [doji, phuquy, sjc, pnj, btmc]
     sources = [gold_fetcher] + vn_scrapers
 
     start_scheduler(app_state, sources, fx_fetcher, settings)
