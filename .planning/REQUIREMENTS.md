@@ -75,28 +75,28 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase TBD | Pending |
-| DATA-02 | Phase TBD | Pending |
-| DATA-03 | Phase TBD | Pending |
-| DATA-04 | Phase TBD | Pending |
-| DATA-05 | Phase TBD | Pending |
-| DATA-06 | Phase TBD | Pending |
-| DATA-07 | Phase TBD | Pending |
-| SIG-01 | Phase TBD | Pending |
-| SIG-02 | Phase TBD | Pending |
-| SIG-03 | Phase TBD | Pending |
-| SIG-04 | Phase TBD | Pending |
-| SIG-05 | Phase TBD | Pending |
-| SIG-06 | Phase TBD | Pending |
-| DEL-01 | Phase TBD | Pending |
-| DEL-02 | Phase TBD | Pending |
-| DEL-03 | Phase TBD | Pending |
+| DATA-01 | Phase 2 | Pending |
+| DATA-02 | Phase 2 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 3 | Pending |
+| DATA-05 | Phase 2 | Pending |
+| DATA-06 | Phase 1 | Pending |
+| DATA-07 | Phase 3 | Pending |
+| SIG-01 | Phase 4 | Pending |
+| SIG-02 | Phase 4 | Pending |
+| SIG-03 | Phase 8 | Pending |
+| SIG-04 | Phase 8 | Pending |
+| SIG-05 | Phase 7 | Pending |
+| SIG-06 | Phase 4 | Pending |
+| DEL-01 | Phase 5 | Pending |
+| DEL-02 | Phase 6 | Pending |
+| DEL-03 | Phase 9 | Pending |
 
 **Coverage:**
 - v1 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16 ⚠️
+- Mapped to phases: 16
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-25*
-*Last updated: 2026-03-25 after initial definition*
+*Last updated: 2026-03-25 after roadmap creation*
