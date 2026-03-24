@@ -54,6 +54,41 @@ class TestStartHandler:
         )
 
     @pytest.mark.asyncio
+    async def test_registers_chat_id(self):
+        from src.alerts.bot import start_handler
+
+        update = MagicMock()
+        update.effective_chat.id = 12345
+        update.message.reply_text = AsyncMock()
+        context = MagicMock()
+
+        from src.alerts import bot
+
+        bot.SUBSCRIBED_CHATS.discard(12345)
+
+        await start_handler(update, context)
+
+        assert 12345 in bot.SUBSCRIBED_CHATS
+
+    @pytest.mark.asyncio
+    async def test_replies_with_welcome_message(self):
+        from src.alerts.bot import start_handler
+
+        update = MagicMock()
+        update.effective_chat.id = 12345
+        update.message.reply_text = AsyncMock()
+        context = MagicMock()
+
+        await start_handler(update, context)
+
+        update.message.reply_text.assert_called_once()
+        message = update.message.reply_text.call_args[0][0]
+        assert "Gold Advisor" in message
+        assert (
+            "không phải tư vấn" in message or "not financial advice" in message.lower()
+        )
+
+    @pytest.mark.asyncio
     async def test_replies_with_disclaimer(self):
         from src.alerts.bot import start_handler
 
@@ -71,7 +106,10 @@ class TestStartHandler:
 class TestStatusHandler:
     @pytest.mark.asyncio
     async def test_replies_with_signal_data(self):
+        from src.alerts import bot as bot_module
         from src.alerts.bot import status_handler
+
+        bot_module._db_path = "/tmp/test.db"
 
         signal = Signal(
             recommendation=Recommendation.BUY,
@@ -99,7 +137,10 @@ class TestStatusHandler:
 
     @pytest.mark.asyncio
     async def test_handles_insufficient_data(self):
+        from src.alerts import bot as bot_module
         from src.alerts.bot import status_handler
+
+        bot_module._db_path = "/tmp/test.db"
 
         signal = Signal(
             recommendation=Recommendation.HOLD,
