@@ -176,7 +176,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 4. Signal Engine Core | 3/4 | Complete    | 2026-03-24 |
 | 5. Web Dashboard | 0/3 | Complete    | 2026-03-24 |
 | 6. Telegram Alerts | 3/3 | Complete    | 2026-03-24 |
-| 7. Macro Indicators | 3/3 | Complete    | 2026-03-25 |
+| 7. Macro Indicators | 3/3 | Complete    | 2026-03-24 |
 | 8. State Bank Policy & Seasonal Factors | TBD | Not started | - |
 | 9. Market News Feed | TBD | Not started | - |
 
