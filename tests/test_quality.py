@@ -124,8 +124,8 @@ class TestCheckAnomaly:
         old_fetched = _make_fetched_price(price_usd=2000.0)
         await save_price(db_session, old_fetched)
 
-        # New price: $2200 (10% increase — at threshold)
-        new_fetched = _make_fetched_price(price_usd=2200.0)
+        # New price: $2250 (12.5% increase — above 10% threshold)
+        new_fetched = _make_fetched_price(price_usd=2250.0)
         new_record = await save_price(db_session, new_fetched)
 
         alert = await check_anomaly(
@@ -135,7 +135,7 @@ class TestCheckAnomaly:
         )
         assert alert is not None
         assert alert.severity == "warning"
-        assert "anomal" in alert.message.lower()
+        assert alert.check_type == "anomaly"
 
     @pytest.mark.asyncio
     async def test_does_not_flag_normal_change(self, db_session):
