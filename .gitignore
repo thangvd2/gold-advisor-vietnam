@@ -10,3 +10,5 @@ build/
 gold_advisor.db
 .env
 *.log
+.python-version
+main.py
