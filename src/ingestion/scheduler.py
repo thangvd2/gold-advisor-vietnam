@@ -35,6 +35,26 @@ def check_and_dispatch_alerts(settings: Settings) -> None:
         logger.exception("Alert dispatch failed")
 
 
+def fetch_news_job(settings: Settings) -> None:
+    try:
+        from src.ingestion.news.store import fetch_and_store_news
+
+        feeds = [
+            {"url": "https://vnexpress.net/rss/kinh-doanh.rss", "source": "VNExpress"},
+            {"url": "https://www.kitco.com/news/gold/rss", "source": "Kitco"},
+        ]
+
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(
+                fetch_and_store_news(feeds=feeds, database_url=settings.database_url)
+            )
+        finally:
+            loop.close()
+    except Exception:
+        logger.exception("News fetch failed")
+
+
 def start_scheduler(
     app_state: dict,
     sources: list,
@@ -62,10 +82,19 @@ def start_scheduler(
         id="alert_dispatch",
         replace_existing=True,
     )
+    scheduler.add_job(
+        fetch_news_job,
+        "interval",
+        minutes=settings.news_fetch_interval_minutes,
+        args=[settings],
+        id="news_fetch",
+        replace_existing=True,
+    )
     scheduler.start()
     logger.info(
-        "Scheduler started: gold_price_fetch + alert_dispatch every %d minutes",
+        "Scheduler started: gold_price_fetch + alert_dispatch every %d min, news_fetch every %d min",
         settings.fetch_interval_minutes,
+        settings.news_fetch_interval_minutes,
     )
 
 
