@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Ready to execute
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-24T18:38:31.806Z"
+stopped_at: Completed 02-02-PLAN.md
+last_updated: "2026-03-24T18:44:33.267Z"
 progress:
   total_phases: 9
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-25)
 ## Current Position
 
 Phase: 2 (vietnamese-gold-price-scraping) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Plan: 2 of 3
 *Updated after each plan completion*
 | Phase 01 P02 | 5min | 2 tasks | 8 files |
 | Phase 01 P03 | 5min | 2 tasks | 8 files |
+| Phase 02 P02 | 5min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Phase 02]: Scrapers use @retry decorator with max_retries=2 for resilience
 - [Phase 02]: Normalizer uses source_name property for uniform Fetcher/Scraper name extraction
 - [Phase 02]: Static HTML scraper pattern: httpx+BS4 for DOJI/PhuQuy, Playwright deferred for JS-rendered sites
+- [Phase 02]: SJC/PNJ: use httpx JSON APIs instead of Playwright — all 4 dealers now use httpx pattern
+- [Phase 02]: API discovery: inspect page JS source (goldprice.js, Next.js chunks) to find hidden endpoints
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T18:38:31.700Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-24T18:44:33.265Z
+Stopped at: Completed 02-02-PLAN.md
 Resume file: None

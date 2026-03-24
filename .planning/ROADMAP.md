@@ -53,7 +53,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Static HTML scrapers for DOJI & Phu Quý (httpx + BeautifulSoup)
-- [ ] 02-02-PLAN.md — Playwright scrapers for SJC & PNJ (JS-rendered sites)
+- [x] 02-02-PLAN.md — Playwright scrapers for SJC & PNJ (JS-rendered sites)
 - [ ] 02-03-PLAN.md — BTMC API scraper, spread storage, full pipeline verification
 
 ### Phase 3: Gap Analysis & Price Charts
