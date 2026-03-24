@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from src.api.routes.health import router as health_router, set_app_state
 from src.api.routes.quality import router as quality_router
+from src.api.routes.gap import router as gap_router
 from src.config import Settings
 from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
 from src.ingestion.fetchers.vietcombank import VietcombankFxRateFetcher
@@ -42,3 +43,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Gold Advisor Vietnam", lifespan=lifespan)
 app.include_router(health_router)
 app.include_router(quality_router, prefix="/quality", tags=["quality"])
+app.include_router(gap_router, prefix="/api/gap", tags=["gap"])

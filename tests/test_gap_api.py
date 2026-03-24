@@ -18,9 +18,9 @@ from src.storage.models import Base, PriceRecord
 
 
 @pytest_asyncio.fixture
-async def api_client(tmp_path):
-    """Create TestClient with a temp SQLite database."""
-    db_file = tmp_path / "test_api_gold.db"
+async def gap_test_db(tmp_path):
+    """Create temp SQLite DB, return TestClient with patched settings."""
+    db_file = tmp_path / "test_gap_api.db"
     db_url = f"sqlite+aiosqlite:///{db_file}"
 
     engine = create_async_engine(db_url, echo=False)
@@ -31,11 +31,25 @@ async def api_client(tmp_path):
         engine, class_=AsyncSession, expire_on_commit=False
     )
 
-    yield {
-        "client": TestClient,
-        "session_factory": session_factory,
-        "db_file": str(db_file),
-    }
+    from unittest.mock import patch
+
+    def mock_settings():
+        from src.config import Settings
+
+        return Settings(database_url=f"sqlite+aiosqlite:///{db_file}")
+
+    with patch("src.api.routes.gap.get_settings", mock_settings):
+        from src.api.routes.gap import router
+        from fastapi import FastAPI
+
+        app = FastAPI()
+        app.include_router(router, prefix="/api/gap", tags=["gap"])
+        client = TestClient(app)
+
+        yield {
+            "client": client,
+            "session_factory": session_factory,
+        }
 
     await engine.dispose()
 
@@ -72,32 +86,12 @@ async def _seed_records(
         await session.commit()
 
 
-def _build_client(api_client, monkeypatch):
-    """Build TestClient with DATABASE_URL pointing to temp file."""
-    from unittest.mock import patch
-
-    def get_settings(*args, **kwargs):
-        from src.config import Settings
-
-        return Settings(
-            database_url=f"sqlite+aiosqlite:///{api_client['db_file']}",
-        )
-
-    with patch("src.api.routes.gap.get_settings", get_settings):
-        from src.api.routes.gap import router
-        from fastapi import FastAPI
-
-        app = FastAPI()
-        app.include_router(router, prefix="/api/gap", tags=["gap"])
-        return TestClient(app)
-
-
-# ── Test 1: GET /api/gap/current returns 200 with gap data ────────────────────
+# ── Test 1-2: GET /api/gap/current ────────────────────────────────────────────
 
 
 class TestGetCurrentGap:
     @pytest.mark.asyncio
-    async def test_returns_200_with_gap_data(self, api_client, monkeypatch):
+    async def test_returns_200_with_gap_data(self, gap_test_db):
         """Seed international + domestic → 200 with gap data."""
         now = datetime.now(timezone.utc)
         records = [
@@ -123,10 +117,9 @@ class TestGetCurrentGap:
                 currency="VND",
             ),
         ]
-        await _seed_records(api_client["session_factory"], records)
+        await _seed_records(gap_test_db["session_factory"], records)
 
-        client = _build_client(api_client, monkeypatch)
-        resp = client.get("/api/gap/current")
+        resp = gap_test_db["client"].get("/api/gap/current")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -142,10 +135,9 @@ class TestGetCurrentGap:
         assert gap["dealer_count"] == 2
 
     @pytest.mark.asyncio
-    async def test_returns_503_when_insufficient_data(self, api_client, monkeypatch):
+    async def test_returns_503_when_insufficient_data(self, gap_test_db):
         """Empty DB → 503 with error message."""
-        client = _build_client(api_client, monkeypatch)
-        resp = client.get("/api/gap/current")
+        resp = gap_test_db["client"].get("/api/gap/current")
 
         assert resp.status_code == 503
         data = resp.json()
@@ -157,7 +149,7 @@ class TestGetCurrentGap:
 
 class TestGetGapHistory:
     @pytest.mark.asyncio
-    async def test_returns_200_with_gap_array(self, api_client, monkeypatch):
+    async def test_returns_200_with_gap_array(self, gap_test_db):
         """Seed historical data → 200 with array of gaps."""
         now = datetime.now(timezone.utc)
         records: list[PriceRecord] = []
@@ -183,10 +175,9 @@ class TestGetGapHistory:
                 )
             )
 
-        await _seed_records(api_client["session_factory"], records)
+        await _seed_records(gap_test_db["session_factory"], records)
 
-        client = _build_client(api_client, monkeypatch)
-        resp = client.get("/api/gap/history?range=1W")
+        resp = gap_test_db["client"].get("/api/gap/history?range=1W")
 
         assert resp.status_code == 200
         data = resp.json()
@@ -201,7 +192,7 @@ class TestGetGapHistory:
         assert "ma_30d" in gap
 
     @pytest.mark.asyncio
-    async def test_validates_range_parameter(self, api_client, monkeypatch):
+    async def test_validates_range_parameter(self, gap_test_db):
         """range='invalid' → 422; valid ranges → 200."""
         now = datetime.now(timezone.utc)
         records = [
@@ -220,20 +211,17 @@ class TestGetGapHistory:
                 currency="VND",
             ),
         ]
-        await _seed_records(api_client["session_factory"], records)
+        await _seed_records(gap_test_db["session_factory"], records)
 
-        client = _build_client(api_client, monkeypatch)
-        resp = client.get("/api/gap/history?range=invalid")
+        resp = gap_test_db["client"].get("/api/gap/history?range=invalid")
         assert resp.status_code == 422
 
         for r in ["1W", "1M", "3M", "1Y"]:
-            resp = client.get(f"/api/gap/history?range={r}")
+            resp = gap_test_db["client"].get(f"/api/gap/history?range={r}")
             assert resp.status_code == 200
 
     @pytest.mark.asyncio
-    async def test_returns_empty_array_when_no_data_in_range(
-        self, api_client, monkeypatch
-    ):
+    async def test_returns_empty_array_when_no_data_in_range(self, gap_test_db):
         """Only old data → 200 with empty gaps array."""
         now = datetime.now(timezone.utc)
         old_ts = now - timedelta(days=60)
@@ -253,10 +241,9 @@ class TestGetGapHistory:
                 currency="VND",
             ),
         ]
-        await _seed_records(api_client["session_factory"], records)
+        await _seed_records(gap_test_db["session_factory"], records)
 
-        client = _build_client(api_client, monkeypatch)
-        resp = client.get("/api/gap/history?range=1W")
+        resp = gap_test_db["client"].get("/api/gap/history?range=1W")
 
         assert resp.status_code == 200
         data = resp.json()
