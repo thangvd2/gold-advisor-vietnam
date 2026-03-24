@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Project Foundation & International Data** - Ingest international gold prices with data quality monitoring (completed 2026-03-24)
 - [x] **Phase 2: Vietnamese Gold Price Scraping** - Scrape SJC bars, ring gold, and spreads from 5+ dealers (completed 2026-03-24)
 - [x] **Phase 3: Gap Analysis & Price Charts** - Compute and visualize the SJC-international price gap (completed 2026-03-24)
-- [ ] **Phase 4: Signal Engine Core** - Generate Buy/Hold/Sell signals with confidence and reasoning
+- [x] **Phase 4: Signal Engine Core** - Generate Buy/Hold/Sell signals with confidence and reasoning (completed 2026-03-24)
 - [ ] **Phase 5: Web Dashboard** - Mobile-responsive dashboard showing prices, gap, signal, and charts
 - [ ] **Phase 6: Telegram Alerts** - Push notifications on signal changes and price movements
 - [ ] **Phase 7: Macro Indicators** - Factor USD/VND, interest rates, DXY, and global gold trend into signals
@@ -79,7 +79,7 @@ Plans:
   2. Each signal includes a one-line reasoning explanation (e.g., "Gap narrowed to 2.8% vs 30-day avg 4.5% — favorable buy conditions")
   3. Selecting Saver mode produces accumulation-oriented guidance; selecting Trader mode produces timing-precision-focused signals with different confidence weighting
   4. Signals are stored with full context (inputs, confidence breakdown, mode) for historical analysis
-**Plans:** 4 plans (3 complete + 1 gap closure)
+**Plans:** 4/4 plans complete
 
 Plans:
 - [x] 04-01-PLAN.md — Signal types + gap/spread/trend factors + composite scorer (SIG-01)
@@ -159,7 +159,7 @@ Phases execute in numeric order. With parallelization enabled:
 | 1. Project Foundation & International Data | 0/3 | Complete    | 2026-03-24 |
 | 2. Vietnamese Gold Price Scraping | 0/3 | Complete    | 2026-03-24 |
 | 3. Gap Analysis & Price Charts | 0/2 | Complete    | 2026-03-24 |
-| 4. Signal Engine Core | 3/4 | Gap closure | - |
+| 4. Signal Engine Core | 3/4 | Complete    | 2026-03-24 |
 | 5. Web Dashboard | TBD | Not started | - |
 | 6. Telegram Alerts | TBD | Not started | - |
 | 7. Macro Indicators | TBD | Not started | - |

@@ -19,6 +19,9 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 - [x] Buy/sell spread for SJC bars and ring gold at each dealer — Validated in Phase 2
 - [x] SJC-international price gap in VND and percentage with historical trend — Validated in Phase 3
 - [x] Price charts for all gold products across 1D/1W/1M/1Y — Validated in Phase 3
+- [x] Buy/Hold/Sell signal with confidence level — Validated in Phase 4
+- [x] One-line reasoning explanation with each signal — Validated in Phase 4
+- [x] Saver/Trader mode with adapted signals — Validated in Phase 4
 
 ### Active
 
