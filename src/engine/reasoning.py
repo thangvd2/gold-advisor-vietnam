@@ -30,6 +30,11 @@ def generate_reasoning(
     ma_label, ma_display = _format_ma(ma_value)
 
     body = _build_reasoning_body(signal, gap_pct, ma_label, ma_display)
+    macro_context = _build_macro_context(signal.factors)
+
+    if macro_context:
+        body = f"{body}. {macro_context}"
+
     mode_prefix = _mode_prefix(signal.mode)
 
     if mode_prefix:
@@ -84,6 +89,22 @@ def _build_reasoning_body(
             return f"Gap at {gap_str} — conditions less favorable for selling"
         else:
             return f"Gap at {gap_str} — no strong directional signal"
+
+
+def _build_macro_context(factors: list) -> str:
+    parts = []
+    for f in factors:
+        if f.name == "fx_trend" and f.confidence > 0:
+            if f.direction > 0:
+                parts.append("VND weakening (USD rising)")
+            elif f.direction < 0:
+                parts.append("VND strengthening (USD falling)")
+        elif f.name == "gold_trend" and f.confidence > 0:
+            if f.direction > 0:
+                parts.append("global gold trending up")
+            elif f.direction < 0:
+                parts.append("global gold trending down")
+    return "; ".join(parts)
 
 
 def _mode_prefix(mode: SignalMode) -> str:
