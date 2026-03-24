@@ -27,19 +27,11 @@ Users buy lower and sell higher than they would with blind timing, and they unde
 - [x] Macro indicator dashboard (USD/VND, real rates, DXY, gold trend) — Validated in Phase 7
 - [x] State Bank policy monitoring as signal override — Validated in Phase 8
 - [x] Vietnamese seasonal demand patterns (Tet, wedding, Vu Lan) — Validated in Phase 8
+- [x] Market news feed with gold news and State Bank announcements — Validated in Phase 9
 
 ### Active
 
-- [ ] Agent provides buy/hold/sell signals for SJC bars and ring gold with confidence level
-- [ ] Agent tracks SJC-international price gap as the primary timing metric
-- [ ] Agent monitors buy/sell spreads at Vietnamese gold shops
-- [ ] Agent factors in macro indicators (real rates, USD/VND, global gold trend)
-- [ ] Agent accounts for Vietnamese seasonal demand patterns (Tet, wedding season, Vu Lan)
-- [ ] Agent monitors State Bank gold policies (import approvals, auctions, interventions)
-- [ ] Web dashboard shows current signal, price context, gap tracker, and macro snapshot
-- [ ] Messenger alerts notify users of significant buy/sell signals (Telegram or Zalo)
-- [ ] Data sourced from both Vietnamese gold shops (scraping SJC, Doji, PNJ, State Bank) and international APIs (Kitco, etc.)
-- [ ] Serves both regular savers (long-term accumulation guidance) and active investors (shorter-term timing signals)
+All v1 requirements have been validated. No active requirements remain.
 
 ### Out of Scope
 
@@ -72,12 +64,16 @@ Vietnam's gold market has unique characteristics that make timing meaningful:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Advice only, no transactions | Removes regulatory complexity and trust requirements | — Pending |
-| Vietnam-only market | Vietnamese gold market has unique dynamics that general tools miss | — Pending |
-| SJC bars + nhẫn trơn | These are the two dominant physical gold products in Vietnam | — Pending |
-| Web dashboard + messenger alerts | Dashboard for analysis, messenger for timely action — matches how Vietnamese users consume info | — Pending |
-| Scrape Vietnamese sources + international APIs | No single API covers domestic Vietnamese gold prices — need both | yfinance + Vietcombank market rate (free-first per D-01) |
+| Advice only, no transactions | Removes regulatory complexity and trust requirements | ✅ Enforced — no transaction features |
+| Vietnam-only market | Vietnamese gold market has unique dynamics that general tools miss | ✅ All data sources are Vietnam-focused |
+| SJC bars + nhẫn trơn | These are the two dominant physical gold products in Vietnam | ✅ Both tracked across all 5 dealers |
+| Web dashboard + messenger alerts | Dashboard for analysis, messenger for timely action — matches how Vietnamese users consume info | ✅ Phase 5 dashboard + Phase 6 Telegram |
+| Scrape Vietnamese sources + international APIs | No single API covers domestic Vietnamese gold prices — need both | yfinance + Vietcombank + 5 VN dealer scrapers |
 | Market FX rate over SBV official | Gap calc accuracy requires real import cost rate | Vietcombank selling rate (D-02) |
+| Deterministic signal engine, no LLM | LLM introduces hallucination risk in financial advice | ✅ All signal computation is pure Python |
+| Observation language, not prediction | Avoids liability, sets correct expectations | ✅ Reasoning uses "tracks/analyzes/observed" |
+| State Bank policy as override factor | SBV actions can invalidate all other signals | ✅ Policy events cap confidence |
+| Seasonal patterns explain, not signal | Prevents misinterpreting expected demand as timing opportunity | ✅ Seasonal adjusts confidence only |
 
 ## Evolution
 
@@ -97,4 +93,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-25 after Phase 1 completion*
+*Last updated: 2026-03-25 after v1.0 completion — all 9 phases delivered*
