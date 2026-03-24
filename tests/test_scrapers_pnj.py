@@ -5,41 +5,40 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 PNJ_API_RESPONSE = {
-    "data": {
-        "updateDate": "24/03/2026 14:15:00",
-        "data": [
-            {
-                "masp": "SJC",
-                "tensp": "Vàng miếng SJC 999.9",
-                "giaban": 17020,
-                "giamua": 16720,
-            },
-            {
-                "masp": "N24K",
-                "tensp": "Nhẫn Trơn PNJ 999.9",
-                "giaban": 17000,
-                "giamua": 16700,
-            },
-            {
-                "masp": "KB",
-                "tensp": "Vàng Kim Bảo 999.9",
-                "giaban": 17000,
-                "giamua": 16700,
-            },
-            {
-                "masp": "24K",
-                "tensp": "Vàng nữ trang 999.9",
-                "giaban": 16890,
-                "giamua": 16490,
-            },
-            {
-                "masp": "999",
-                "tensp": "Vàng nữ trang 99.9%",
-                "giaban": 16490,
-                "giamua": 16090,
-            },
-        ],
-    }
+    "data": [
+        {
+            "masp": "SJC",
+            "tensp": "Vàng miếng SJC 999.9",
+            "giaban": 17020,
+            "giamua": 16720,
+        },
+        {
+            "masp": "N24K",
+            "tensp": "Nhẫn Trơn PNJ 999.9",
+            "giaban": 17000,
+            "giamua": 16700,
+        },
+        {
+            "masp": "KB",
+            "tensp": "Vàng Kim Bảo 999.9",
+            "giaban": 17000,
+            "giamua": 16700,
+        },
+        {
+            "masp": "24K",
+            "tensp": "Vàng nữ trang 999.9",
+            "giaban": 16890,
+            "giamua": 16490,
+        },
+        {
+            "masp": "999",
+            "tensp": "Vàng nữ trang 99.9%",
+            "giaban": 16490,
+            "giamua": 16090,
+        },
+    ],
+    "chinhanh": "hochiminh",
+    "updateDate": "24/03/2026 14:15:00",
 }
 
 
@@ -124,7 +123,7 @@ class TestPNJScraper:
 
     @pytest.mark.asyncio
     async def test_returns_empty_when_react_spa_hasnt_rendered_prices(self):
-        empty_response = {"data": {"updateDate": "", "data": []}}
+        empty_response = {"data": [], "updateDate": "", "chinhanh": "hochiminh"}
         mock_response = _make_mock_json_response(empty_response)
 
         with patch("src.ingestion.scrapers.pnj.httpx.AsyncClient") as mock_client_cls:
