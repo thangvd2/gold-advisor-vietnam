@@ -6,7 +6,9 @@ from src.analysis.gap import (
     calculate_historical_gaps,
 )
 from src.engine.composite import compute_composite_signal
+from src.engine.fx_signal import compute_fx_signal
 from src.engine.gap_signal import compute_gap_signal
+from src.engine.gold_trend_signal import compute_gold_trend_signal
 from src.engine.modes import get_mode_weights
 from src.engine.reasoning import generate_reasoning
 from src.engine.spread_signal import compute_spread_signal
@@ -40,8 +42,12 @@ def compute_signal(db_path: str, mode: SignalMode = SignalMode.SAVER) -> Signal:
     trend_factor = compute_trend_signal(
         current_gap, historical_gaps, weight=mode_weights["trend"]
     )
+    fx_factor = compute_fx_signal(db_path, weight=mode_weights["fx_trend"])
+    gold_trend_factor = compute_gold_trend_signal(
+        db_path, weight=mode_weights["gold_trend"]
+    )
 
-    factors = [gap_factor, spread_factor, trend_factor]
+    factors = [gap_factor, spread_factor, trend_factor, fx_factor, gold_trend_factor]
 
     signal = compute_composite_signal(factors, mode)
 

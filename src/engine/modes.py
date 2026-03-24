@@ -7,8 +7,20 @@ TRADER: timing-precision guidance — gap matters most.
 from src.engine.types import SignalMode
 
 MODE_WEIGHTS: dict[SignalMode, dict[str, float]] = {
-    SignalMode.SAVER: {"gap": 0.4, "spread": 0.1, "trend": 0.5},
-    SignalMode.TRADER: {"gap": 0.6, "spread": 0.3, "trend": 0.1},
+    SignalMode.SAVER: {
+        "gap": 0.3,
+        "spread": 0.1,
+        "trend": 0.4,
+        "fx_trend": 0.1,
+        "gold_trend": 0.1,
+    },
+    SignalMode.TRADER: {
+        "gap": 0.5,
+        "spread": 0.2,
+        "trend": 0.1,
+        "fx_trend": 0.1,
+        "gold_trend": 0.1,
+    },
 }
 
 MODE_THRESHOLDS: dict[SignalMode, tuple[float, float]] = {
