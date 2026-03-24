@@ -151,31 +151,22 @@ class TestYFinanceGoldFetcher:
 
 class TestConversion:
     def test_usd_to_vnd_per_luong(self):
-        """$2000/oz × 25000 VND/USD / 1.09714286 ≈ 45,568,000 VND/lượng."""
         usd_per_oz = 2000.0
         vnd_per_usd = 25000.0
         result = convert_usd_to_vnd_per_luong(usd_per_oz, vnd_per_usd)
-        expected = (2000.0 * 25000.0) / 1.09714286
+        expected = (usd_per_oz / 31.1034768) * 37.5 * vnd_per_usd
         assert abs(result - expected) < 0.01
-        assert abs(result - 45568181.82) < 1.0
 
     def test_conversion_factor(self):
-        """Verify the conversion factor: 1 oz = 31.1034768g, 1 lượng = 37.5g."""
-        # 31.1034768 / 37.5 = 0.829426...
-        # So 1 lượng = 1 / 0.829426 oz = 1.2056... oz
-        # Or equivalently: VND/lượng = (USD/oz × VND/USD) / (31.1034768 / 37.5)
         usd_per_oz = 1000.0
         vnd_per_usd = 25000.0
         result = convert_usd_to_vnd_per_luong(usd_per_oz, vnd_per_usd)
-        # 1000 * 25000 = 25,000,000 VND/oz
-        # 25,000,000 / 1.09714286 = 22,784,090.9 VND/lượng
-        assert 22_000_000 < result < 23_000_000
+        expected = (usd_per_oz / 31.1034768) * 37.5 * vnd_per_usd
+        assert abs(result - expected) < 0.01
 
     def test_round_trip_consistency(self):
-        """VND/lượng × conversion factor / VND_per_USD should ≈ USD/oz."""
         usd_per_oz = 2650.0
         vnd_per_usd = 25500.0
         vnd_per_luong = convert_usd_to_vnd_per_luong(usd_per_oz, vnd_per_usd)
-        # Reverse: (vnd_per_luong * 1.09714286) / vnd_per_usd ≈ usd_per_oz
-        recovered = (vnd_per_luong * 1.09714286) / vnd_per_usd
+        recovered = (vnd_per_luong * (31.1034768 / 37.5)) / vnd_per_usd
         assert abs(recovered - usd_per_oz) < 0.01
