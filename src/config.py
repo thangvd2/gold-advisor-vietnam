@@ -1,0 +1,16 @@
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
+
+    app_name: str = "gold_advisor"
+    database_url: str = "sqlite+aiosqlite:///./gold_advisor.db"
+    log_level: str = "INFO"
+    fetch_interval_minutes: int = 5
+    freshness_threshold_minutes: int = 15
+    anomaly_threshold_percent: float = 10.0

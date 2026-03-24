@@ -1,0 +1,20 @@
+[project]
+name = "gold-invester"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.12"
+dependencies = [
+    "aiosqlite>=0.22.1",
+    "apscheduler>=3.11.2",
+    "fastapi>=0.135.2",
+    "greenlet>=3.3.2",
+    "httpx>=0.28.1",
+    "pandas>=3.0.1",
+    "pydantic-settings>=2.13.1",
+    "pytest>=9.0.2",
+    "pytest-asyncio>=1.3.0",
+    "ruff>=0.15.7",
+    "sqlalchemy>=2.0.48",
+    "uvicorn[standard]>=0.42.0",
+    "yfinance>=1.2.0",
+]
