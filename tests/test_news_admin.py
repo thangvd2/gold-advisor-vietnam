@@ -16,11 +16,6 @@ def admin_news_app():
     engine = create_engine(f"sqlite:///{path}")
     Base.metadata.create_all(engine)
 
-    def mock_settings():
-        from src.config import Settings
-
-        return Settings(database_url=f"sqlite:///{path}")
-
     async_engine = create_async_engine(f"sqlite+aiosqlite:///{path}", echo=False)
     async_test_session = async_sessionmaker(
         async_engine, class_=AsyncSession, expire_on_commit=False
@@ -28,13 +23,7 @@ def admin_news_app():
 
     with (
         __import__("unittest.mock", fromlist=["patch"]).patch(
-            "src.api.routes.admin.get_settings", mock_settings
-        ),
-        __import__("unittest.mock", fromlist=["patch"]).patch(
             "src.api.routes.admin.async_session", async_test_session
-        ),
-        __import__("unittest.mock", fromlist=["patch"]).patch(
-            "src.api.routes.news.get_settings", mock_settings
         ),
         __import__("unittest.mock", fromlist=["patch"]).patch(
             "src.api.routes.news.async_session", async_test_session

@@ -5,7 +5,8 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from src.storage.database import async_session
-from src.storage.models import PolicyEvent
+from src.storage.models import NewsItem, PolicyEvent
+from src.storage.repository import save_news_item
 
 router = APIRouter()
 
@@ -18,6 +19,15 @@ VALID_EVENT_TYPES = {
 }
 VALID_IMPACTS = {"bullish", "bearish", "neutral", "uncertain"}
 VALID_SEVERITIES = {"high", "medium", "low"}
+
+
+class ManualNewsCreate(BaseModel):
+    title: str = Field(..., min_length=1)
+    url: str | None = None
+    source: str = Field(..., min_length=1)
+    published_at: str | None = None
+    excerpt: str | None = None
+    category: str | None = "state_bank"
 
 
 class PolicyEventCreate(BaseModel):
@@ -64,6 +74,44 @@ async def create_policy_event(body: PolicyEventCreate):
         "expires_at": event.expires_at.isoformat() if event.expires_at else None,
         "is_active": event.is_active,
         "created_at": event.created_at.isoformat() if event.created_at else None,
+    }
+
+
+@router.post("/news")
+async def create_manual_news(body: ManualNewsCreate):
+    published_at = None
+    if body.published_at:
+        published_at = datetime.fromisoformat(body.published_at)
+
+    url = body.url or f"manual://{body.title[:50].replace(' ', '-').lower()}"
+
+    async with async_session() as session:
+        item = await save_news_item(
+            session,
+            title=body.title,
+            url=url,
+            source=body.source,
+            published_at=published_at,
+            excerpt=body.excerpt,
+            category=body.category,
+            is_manual=True,
+        )
+        await session.commit()
+        if item:
+            await session.refresh(item)
+
+    if item is None:
+        return {"status": "duplicate", "url": url}
+
+    return {
+        "id": item.id,
+        "title": item.title,
+        "url": item.url,
+        "source": item.source,
+        "published_at": item.published_at.isoformat() if item.published_at else None,
+        "excerpt": item.excerpt,
+        "category": item.category,
+        "is_manual": item.is_manual,
     }
 
 
