@@ -2,11 +2,18 @@
 
 import httpx
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.ingestion.models import FetchedPrice
+
+
+def _make_mock_response(html: str) -> MagicMock:
+    resp = MagicMock()
+    resp.text = html
+    resp.raise_for_status = MagicMock()
+    return resp
 
 
 DOJI_HTML_WITH_PRICES = """
@@ -72,8 +79,7 @@ DOJI_HTML_NO_PRICES = """
 class TestDojiScraper:
     @pytest.mark.asyncio
     async def test_parses_sjc_bar_row(self):
-        mock_response = AsyncMock()
-        mock_response.text = DOJI_HTML_WITH_PRICES
+        mock_response = _make_mock_response(DOJI_HTML_WITH_PRICES)
 
         with patch("src.ingestion.scrapers.doji.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -99,8 +105,7 @@ class TestDojiScraper:
 
     @pytest.mark.asyncio
     async def test_parses_ring_gold_row(self):
-        mock_response = AsyncMock()
-        mock_response.text = DOJI_HTML_WITH_PRICES
+        mock_response = _make_mock_response(DOJI_HTML_WITH_PRICES)
 
         with patch("src.ingestion.scrapers.doji.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -126,8 +131,7 @@ class TestDojiScraper:
 
     @pytest.mark.asyncio
     async def test_skips_non_target_rows(self):
-        mock_response = AsyncMock()
-        mock_response.text = DOJI_HTML_WITH_PRICES
+        mock_response = _make_mock_response(DOJI_HTML_WITH_PRICES)
 
         with patch("src.ingestion.scrapers.doji.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -147,8 +151,7 @@ class TestDojiScraper:
 
     @pytest.mark.asyncio
     async def test_converts_doji_unit_nghin_chi_to_vnd_luong(self):
-        mock_response = AsyncMock()
-        mock_response.text = DOJI_HTML_WITH_PRICES
+        mock_response = _make_mock_response(DOJI_HTML_WITH_PRICES)
 
         with patch("src.ingestion.scrapers.doji.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -184,8 +187,7 @@ class TestDojiScraper:
 
     @pytest.mark.asyncio
     async def test_returns_empty_on_malformed_html(self):
-        mock_response = AsyncMock()
-        mock_response.text = DOJI_HTML_EMPTY
+        mock_response = _make_mock_response(DOJI_HTML_EMPTY)
 
         with patch("src.ingestion.scrapers.doji.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -203,8 +205,7 @@ class TestDojiScraper:
 
     @pytest.mark.asyncio
     async def test_parses_update_timestamp(self):
-        mock_response = AsyncMock()
-        mock_response.text = DOJI_HTML_WITH_PRICES
+        mock_response = _make_mock_response(DOJI_HTML_WITH_PRICES)
 
         with patch("src.ingestion.scrapers.doji.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -228,8 +229,7 @@ class TestDojiScraper:
 
     @pytest.mark.asyncio
     async def test_returns_empty_when_no_target_products_found(self):
-        mock_response = AsyncMock()
-        mock_response.text = DOJI_HTML_NO_PRICES
+        mock_response = _make_mock_response(DOJI_HTML_NO_PRICES)
 
         with patch("src.ingestion.scrapers.doji.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
