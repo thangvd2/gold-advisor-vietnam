@@ -49,7 +49,12 @@ Plans:
   2. Ring gold (nhẫn trơn) prices are scraped alongside SJC bar prices from the same dealers
   3. Buy/sell spreads are calculated and stored for each dealer and product type
   4. Individual scraper failures don't crash the system or block other scrapers — failures are logged and surfaced in data quality checks
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Static HTML scrapers for DOJI & Phu Quý (httpx + BeautifulSoup)
+- [ ] 02-02-PLAN.md — Playwright scrapers for SJC & PNJ (JS-rendered sites)
+- [ ] 02-03-PLAN.md — BTMC API scraper, spread storage, full pipeline verification
 
 ### Phase 3: Gap Analysis & Price Charts
 **Goal**: Users can see the SJC-international price gap with historical context (1W/1M/3M/1Y) and visual price charts for all gold products
@@ -142,7 +147,7 @@ Phases execute in numeric order. With parallelization enabled:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Project Foundation & International Data | 0/3 | Complete    | 2026-03-24 |
-| 2. Vietnamese Gold Price Scraping | TBD | Not started | - |
+| 2. Vietnamese Gold Price Scraping | 0/3 | Not started | - |
 | 3. Gap Analysis & Price Charts | TBD | Not started | - |
 | 4. Signal Engine Core | TBD | Not started | - |
 | 5. Web Dashboard | TBD | Not started | - |
