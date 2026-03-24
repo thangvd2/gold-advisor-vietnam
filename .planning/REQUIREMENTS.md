@@ -21,8 +21,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **SIG-01**: User receives a Buy/Hold/Sell signal with a confidence level (0-100%) based on multi-factor analysis
 - [x] **SIG-02**: User sees a one-line reasoning explanation with each signal (e.g., "Gap narrowed to 2.8% vs 30-day avg 4.5% — favorable buy conditions")
-- [ ] **SIG-03**: Signal engine factors in State Bank policy events (import approvals, gold auctions, interventions) as an override factor
-- [ ] **SIG-04**: Signal engine factors in Vietnamese seasonal demand patterns (pre-Tet spike, post-Tet weakness, wedding season, Vu Lan, ghost month)
+- [x] **SIG-03**: Signal engine factors in State Bank policy events (import approvals, gold auctions, interventions) as an override factor
+- [x] **SIG-04**: Signal engine factors in Vietnamese seasonal demand patterns (pre-Tet spike, post-Tet weakness, wedding season, Vu Lan, ghost month)
 - [x] **SIG-05**: User can view macro indicator dashboard showing USD/VND exchange rate, real interest rates, DXY dollar strength, and global gold trend
 - [x] **SIG-06**: User can select Saver mode (accumulation guidance, long-term trend interpretation) or Trader mode (timing precision, signal confidence focus), and signals adapt accordingly
 
@@ -84,8 +84,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-07 | Phase 3 | Complete |
 | SIG-01 | Phase 4 | Complete |
 | SIG-02 | Phase 4 | Complete |
-| SIG-03 | Phase 8 | Pending |
-| SIG-04 | Phase 8 | Pending |
+| SIG-03 | Phase 8 | Complete |
+| SIG-04 | Phase 8 | Complete |
 | SIG-05 | Phase 7 | Complete |
 | SIG-06 | Phase 4 | Complete |
 | DEL-01 | Phase 5 | Complete |

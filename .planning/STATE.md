@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to plan
-stopped_at: Completed 07-03-PLAN.md
-last_updated: "2026-03-24T20:20:48.227Z"
+status: Phase complete
+stopped_at: Completed 08-03-PLAN.md
+last_updated: "2026-03-25T20:30:00.000Z"
 progress:
   total_phases: 9
-  completed_phases: 7
-  total_plans: 21
-  completed_plans: 21
+  completed_phases: 8
+  total_plans: 24
+  completed_plans: 24
 ---
 
 # Project State
@@ -19,18 +19,18 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-25)
 
 **Core value:** Users buy lower and sell higher than they would with blind timing, and they understand *why*.
-**Current focus:** Phase 7 — macro-indicators (COMPLETE)
+**Current focus:** Phase 8 — state-bank-policy-seasonal (COMPLETE)
 
 ## Current Position
 
-Phase: 08
+Phase: 09
 Plan: Not started
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 24
 - Average duration: —
 - Total execution time: 0 hours
 
@@ -61,6 +61,9 @@ Plan: Not started
 | Phase 06 P01 | 4min | 1 tasks | 5 files |
 | Phase 06 P02 | 3min | 1 tasks | 2 files |
 | Phase 06 P03 | 4min | 1 tasks | 3 files |
+| Phase 08 P01 | 3min | 3 tasks | 2 files |
+| Phase 08 P02 | 5min | 3 tasks | 5 files |
+| Phase 08 P03 | 5min | 5 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -120,6 +123,12 @@ Recent decisions affecting current work:
 - [Phase 07]: Gap weight reduced (saver: 0.4→0.3, trader: 0.6→0.5) to accommodate macro factors
 - [Phase 07]: Real interest rates deferred — DXY used as proxy for dollar strength
 - [Phase 07]: Macro context appended to reasoning as separate clause
+- [Phase 08]: Seasonal factor has zero direction/weight — only modifies confidence
+- [Phase 08]: Tet (Jan-Feb) = 0.7 modifier, high-demand (Nov-Dec) = 0.85 modifier
+- [Phase 08]: No Alembic — project uses Base.metadata.create_all() for all models
+- [Phase 08]: Policy confidence caps: high=0.3, medium=0.6, low=1.0
+- [Phase 08]: Policy override applied after seasonal modifier (policy takes priority)
+- [Phase 08]: Seasonal badge only shown for high/very_high demand months
 
 ### Pending Todos
 
@@ -133,6 +142,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-25T20:25:00.000Z
-Stopped at: Completed 07-03-PLAN.md
+Last session: 2026-03-25T20:30:00.000Z
+Stopped at: Completed 08-03-PLAN.md
 Resume file: None
