@@ -64,7 +64,11 @@ Plans:
   1. SJC-international price gap is calculated and available in both VND absolute and percentage terms
   2. Historical gap trend is queryable for 1W, 1M, 3M, and 1Y windows
   3. Price charts display SJC bars, ring gold, and international gold for 1D, 1W, 1M, and 1Y timeframes
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — DuckDB analytics foundation + gap calculation engine (DATA-04)
+- [ ] 03-02-PLAN.md — Price chart data API for all gold products (DATA-07)
 
 ### Phase 4: Signal Engine Core
 **Goal**: Users receive Buy/Hold/Sell signals with confidence levels (0-100%), one-line reasoning explanations, and mode-appropriate interpretation for Savers vs Traders
@@ -148,7 +152,7 @@ Phases execute in numeric order. With parallelization enabled:
 |-------|----------------|--------|-----------|
 | 1. Project Foundation & International Data | 0/3 | Complete    | 2026-03-24 |
 | 2. Vietnamese Gold Price Scraping | 0/3 | Complete    | 2026-03-24 |
-| 3. Gap Analysis & Price Charts | TBD | Not started | - |
+| 3. Gap Analysis & Price Charts | 0/2 | Not started | - |
 | 4. Signal Engine Core | TBD | Not started | - |
 | 5. Web Dashboard | TBD | Not started | - |
 | 6. Telegram Alerts | TBD | Not started | - |
