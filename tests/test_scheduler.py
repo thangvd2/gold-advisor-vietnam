@@ -76,7 +76,8 @@ class TestScheduler:
 
         app_state = {}
         sources = [MagicMock()]
-        start_scheduler(app_state, sources, settings())
+        fx_fetcher = MagicMock()
+        start_scheduler(app_state, sources, fx_fetcher, Settings())
         assert "scheduler" in app_state
         assert app_state["scheduler"].running is True
 
@@ -88,7 +89,8 @@ class TestScheduler:
 
         app_state = {}
         mock_source = MagicMock()
-        start_scheduler(app_state, [mock_source], settings())
+        fx_fetcher = MagicMock()
+        start_scheduler(app_state, [mock_source], fx_fetcher, Settings())
 
         jobs = app_state["scheduler"].get_jobs()
         assert len(jobs) >= 1
@@ -128,7 +130,7 @@ class TestQualityEndpoints:
             from httpx import ASGITransport, AsyncClient
 
             test_app = FastAPI()
-            test_app.include_router(router)
+            test_app.include_router(router, prefix="/quality")
 
             async with AsyncClient(
                 transport=ASGITransport(app=test_app), base_url="http://test"
@@ -166,7 +168,7 @@ class TestQualityEndpoints:
             from httpx import ASGITransport, AsyncClient
 
             test_app = FastAPI()
-            test_app.include_router(router)
+            test_app.include_router(router, prefix="/quality")
 
             async with AsyncClient(
                 transport=ASGITransport(app=test_app), base_url="http://test"
@@ -199,7 +201,7 @@ class TestQualityEndpoints:
             from httpx import ASGITransport, AsyncClient
 
             test_app = FastAPI()
-            test_app.include_router(router)
+            test_app.include_router(router, prefix="/quality")
 
             async with AsyncClient(
                 transport=ASGITransport(app=test_app), base_url="http://test"
@@ -222,16 +224,18 @@ class TestQualityEndpoints:
 
 
 class TestHealthWithScheduler:
-    def test_health_shows_scheduler_running(self):
+    @pytest.mark.asyncio
+    async def test_health_shows_scheduler_running(self):
         """GET /health reflects scheduler 'running' status."""
         from src.ingestion.scheduler import start_scheduler
+        from src.api.routes.health import set_app_state
 
         app_state = {}
-        start_scheduler(app_state, [], settings())
+        start_scheduler(app_state, [], MagicMock(), Settings())
+        set_app_state(app_state)
 
         from fastapi import FastAPI
         from httpx import ASGITransport, AsyncClient
-
         from src.api.routes.health import router
 
         test_app = FastAPI()
@@ -244,23 +248,19 @@ class TestHealthWithScheduler:
             mock_session.__aexit__ = AsyncMock(return_value=False)
             mock_session_factory.return_value = mock_session
 
-            import asyncio
+            async with AsyncClient(
+                transport=ASGITransport(app=test_app), base_url="http://test"
+            ) as client:
+                response = await client.get("/health")
 
-            async def _test():
-                async with AsyncClient(
-                    transport=ASGITransport(app=test_app), base_url="http://test"
-                ) as client:
-                    response = await client.get("/health")
-                return response
-
-            response = asyncio.get_event_loop().run_until_complete(_test())
-
-        # Without scheduler ref injected into health, it returns "not_started"
-        # The real test is that when scheduler is wired into main.py, it shows "running"
         assert response.status_code == 200
-        assert "scheduler" in response.json()
+        data = response.json()
+        assert data["scheduler"] == "running"
 
         app_state["scheduler"].shutdown(wait=False)
+
+        # Reset health module state
+        set_app_state({})
 
 
 # ── Test 7: End-to-end pipeline ───────────────────────────────────────────────
@@ -289,7 +289,7 @@ class TestEndToEndPipeline:
             )
         ]
 
-        result = await fetch_and_store(db_session, gold_fetcher, fx_fetcher, settings())
+        result = await fetch_and_store(db_session, gold_fetcher, fx_fetcher, Settings())
         assert result["status"] == "ok"
         assert result["prices_saved"] == 1
 
