@@ -7,6 +7,7 @@ dependencies = [
     "aiosqlite>=0.22.1",
     "apscheduler>=3.11.2",
     "beautifulsoup4>=4.14.3",
+    "duckdb>=1.5.1",
     "fastapi>=0.135.2",
     "greenlet>=3.3.2",
     "httpx>=0.28.1",
