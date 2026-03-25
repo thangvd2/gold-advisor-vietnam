@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from src.analysis.connection import get_duckdb_connection
 
 RANGE_MAP = {
+    "1D": timedelta(days=1),
     "1W": timedelta(days=7),
     "1M": timedelta(days=30),
     "3M": timedelta(days=90),
@@ -38,7 +39,6 @@ def calculate_current_gap(db_path: str | str) -> dict | None:
                 SELECT price_vnd, price_usd, timestamp
                 FROM db.price_history
                 WHERE product_type = 'xau_usd'
-                  AND source = 'yfinance'
                   AND price_vnd IS NOT NULL
                 ORDER BY timestamp DESC
                 LIMIT 1
@@ -106,7 +106,6 @@ def calculate_historical_gaps(db_path: str, range: str = "1W") -> list[dict]:
                     AVG(price_vnd) as intl_price_vnd
                 FROM db.price_history
                 WHERE product_type = 'xau_usd'
-                  AND source = 'yfinance'
                   AND price_vnd IS NOT NULL
                 GROUP BY 1
             ),

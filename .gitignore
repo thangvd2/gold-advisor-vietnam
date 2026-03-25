@@ -12,3 +12,4 @@ gold_advisor.db
 *.log
 .python-version
 main.py
+.planning/

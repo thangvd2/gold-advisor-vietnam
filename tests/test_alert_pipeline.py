@@ -160,8 +160,8 @@ class TestLifespanWiring:
 
         with (
             patch("src.api.main.init_db", new_callable=AsyncMock),
-            patch("src.api.main.start_bot") as mock_start_bot,
-            patch("src.api.main.stop_bot") as mock_stop_bot,
+            patch("src.api.main.start_bot", new_callable=AsyncMock) as mock_start_bot,
+            patch("src.api.main.stop_bot", new_callable=AsyncMock) as mock_stop_bot,
             patch("src.api.main.start_scheduler"),
             patch("src.api.main.stop_scheduler"),
             patch("src.api.main.set_app_state"),

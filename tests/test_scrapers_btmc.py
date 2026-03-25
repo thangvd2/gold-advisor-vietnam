@@ -149,11 +149,23 @@ class TestBTMCScraper:
     async def test_returns_empty_on_unexpected_json_structure(self):
         """Test 4: Returns empty list on unexpected JSON structure (missing fields)."""
         bad_json = [{"wrong_field": "value"}]
-        mock_response = _make_mock_json_response(bad_json)
+        json_response = _make_mock_json_response(bad_json)
+        empty_html = "<div>No gold data</div>"
+        html_response = _make_mock_html_response(empty_html)
 
         with patch("src.ingestion.scrapers.btmc.httpx.AsyncClient") as mock_cls:
             mock_client = AsyncMock()
-            mock_client.get.return_value = mock_response
+
+            call_count = 0
+
+            def get_side(url, **kwargs):
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    return json_response
+                return html_response
+
+            mock_client.get.side_effect = get_side
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
             mock_cls.return_value = mock_client
@@ -267,6 +279,7 @@ class TestBTMCScraper:
             scraper = BTMCScraper()
             results = await scraper.fetch()
 
+        vrtl = [p for p in results if "sjc_bar" in p.product_type]
         assert len(vrtl) >= 1
         assert vrtl[0].buy_price > 100_000_000
         assert vrtl[0].sell_price > 100_000_000

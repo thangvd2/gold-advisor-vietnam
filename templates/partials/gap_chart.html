@@ -1,7 +1,8 @@
 <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
   <div class="p-4 sm:p-6 border-b border-gold-500/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-    <h2 class="text-sm font-semibold uppercase tracking-[0.15em] text-charcoal-300">Gap History</h2>
+    <h2 class="text-sm font-semibold uppercase tracking-[0.15em] text-charcoal-200">Gap History</h2>
     <div class="flex items-center gap-1 bg-charcoal-800/80 rounded-lg p-0.5" id="gap-timeframe-btns">
+      <button onclick="updateGapRange('1D')" data-range="1D" class="tf-btn px-3 py-1 text-xs font-semibold rounded-md transition-all text-charcoal-400 hover:text-charcoal-200">1D</button>
       <button onclick="updateGapRange('1W')" data-range="1W" class="tf-btn px-3 py-1 text-xs font-semibold rounded-md transition-all bg-gold-500 text-charcoal-900">1W</button>
       <button onclick="updateGapRange('1M')" data-range="1M" class="tf-btn px-3 py-1 text-xs font-semibold rounded-md transition-all text-charcoal-400 hover:text-charcoal-200">1M</button>
       <button onclick="updateGapRange('3M')" data-range="3M" class="tf-btn px-3 py-1 text-xs font-semibold rounded-md transition-all text-charcoal-400 hover:text-charcoal-200">3M</button>
@@ -10,9 +11,9 @@
   </div>
   <div class="px-4 sm:px-6 pb-4 sm:pb-6">
     <div class="flex items-center gap-4 mb-3 text-xs">
-      <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 rounded bg-gold-500 inline-block"></span><span class="text-charcoal-400">Gap %</span></span>
-      <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 rounded bg-gray-500 inline-block" style="border-bottom: 1px dashed #888"></span><span class="text-charcoal-500">7d MA</span></span>
-      <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 rounded bg-gray-600 inline-block" style="border-bottom: 1px dashed #666"></span><span class="text-charcoal-500">30d MA</span></span>
+      <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 rounded bg-gold-500 inline-block"></span><span class="text-charcoal-100">Gap %</span></span>
+      <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 rounded inline-block" style="border-bottom: 2px dashed #B0B0B0"></span><span class="text-charcoal-100">7d MA</span></span>
+      <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 rounded inline-block" style="border-bottom: 2px dashed #909090"></span><span class="text-charcoal-100">30d MA</span></span>
     </div>
     <div class="relative h-[280px] sm:h-[320px]">
       <canvas id="gapChart"></canvas>

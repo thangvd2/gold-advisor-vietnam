@@ -13,6 +13,14 @@ logger = logging.getLogger(__name__)
 _dispatcher = None
 
 
+def _get_db_path(settings: Settings) -> str:
+    url = settings.database_url
+    for prefix in ("sqlite+aiosqlite:///", "sqlite:///"):
+        if url.startswith(prefix):
+            return url[len(prefix) :]
+    return url
+
+
 def check_and_dispatch_alerts(settings: Settings) -> None:
     global _dispatcher
 
@@ -24,7 +32,7 @@ def check_and_dispatch_alerts(settings: Settings) -> None:
         if _dispatcher is None:
             _dispatcher = AlertDispatcher()
 
-        signal = compute_signal(settings.database_url, SignalMode.SAVER)
+        signal = compute_signal(_get_db_path(settings), SignalMode.SAVER)
 
         loop = asyncio.new_event_loop()
         try:
@@ -55,6 +63,17 @@ def fetch_news_job(settings: Settings) -> None:
         logger.exception("News fetch failed")
 
 
+def _fetch_all_sync(sources, fx_fetcher, settings):
+    """Sync wrapper for async fetch_and_store_all, called by BackgroundScheduler."""
+    from src.ingestion.normalizer import fetch_and_store_all
+
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(fetch_and_store_all(sources, fx_fetcher, settings))
+    finally:
+        loop.close()
+
+
 def start_scheduler(
     app_state: dict,
     sources: list,
@@ -64,10 +83,8 @@ def start_scheduler(
     scheduler = BackgroundScheduler()
     app_state["scheduler"] = scheduler
 
-    from src.ingestion.normalizer import fetch_and_store_all
-
     scheduler.add_job(
-        fetch_and_store_all,
+        _fetch_all_sync,
         "interval",
         minutes=settings.fetch_interval_minutes,
         args=[sources, fx_fetcher, settings],

@@ -243,33 +243,103 @@ class TestFormatSignalMessage:
 
 
 class TestBotLifecycle:
-    def test_start_bot_with_empty_token_no_crash(self):
+    @pytest.mark.asyncio
+    async def test_start_bot_with_empty_token_no_crash(self):
         from src.alerts.bot import start_bot
 
         with patch("src.alerts.bot.Settings") as mock_settings:
             mock_settings.return_value.telegram_bot_token = ""
-            start_bot("/tmp/test.db")
+            await start_bot("/tmp/test.db")
 
-    def test_start_bot_with_token_creates_thread(self):
+    @pytest.mark.asyncio
+    async def test_start_bot_with_token_initializes_app(self):
         from src.alerts.bot import start_bot
 
         with (
             patch("src.alerts.bot.Settings") as mock_settings,
             patch("src.alerts.bot.Application") as mock_app_builder,
-            patch("src.alerts.bot.threading.Thread") as mock_thread,
         ):
             mock_settings.return_value.telegram_bot_token = "fake-token"
             mock_app = MagicMock()
+            mock_app.initialize = AsyncMock()
+            mock_app.start = AsyncMock()
+            mock_app.updater.start_polling = AsyncMock()
             mock_app_builder.builder.return_value.token.return_value.build.return_value = mock_app
 
-            start_bot("/tmp/test.db")
+            await start_bot("/tmp/test.db")
 
-            mock_thread.assert_called_once()
+            mock_app.initialize.assert_awaited_once()
+            mock_app.start.assert_awaited_once()
+            mock_app.updater.start_polling.assert_awaited_once()
 
-    def test_stop_bot_with_no_bot_no_crash(self):
+    @pytest.mark.asyncio
+    async def test_stop_bot_with_no_bot_no_crash(self):
         from src.alerts.bot import stop_bot
 
         from src.alerts import bot
 
         bot._application = None
-        stop_bot()
+        await stop_bot()
+
+    @pytest.mark.asyncio
+    async def test_start_bot_extracts_db_path_from_uri(self):
+        """start_bot strips SQLAlchemy URI prefix to get raw .db path."""
+        from src.alerts import bot as bot_module
+        from src.alerts.bot import start_bot
+
+        with (
+            patch("src.alerts.bot.Settings") as mock_settings,
+            patch("src.alerts.bot.Application") as mock_app_builder,
+        ):
+            mock_settings.return_value.telegram_bot_token = "fake-token"
+            mock_app = MagicMock()
+            mock_app.initialize = AsyncMock()
+            mock_app.start = AsyncMock()
+            mock_app.updater.start_polling = AsyncMock()
+            mock_app_builder.builder.return_value.token.return_value.build.return_value = mock_app
+
+            await start_bot("sqlite+aiosqlite:///./gold_advisor.db")
+
+            assert bot_module._db_path == "gold_advisor.db"
+
+    @pytest.mark.asyncio
+    async def test_start_bot_handles_relative_path_uri(self):
+        """start_bot expands relative path from URI."""
+        from src.alerts import bot as bot_module
+        from src.alerts.bot import start_bot
+
+        with (
+            patch("src.alerts.bot.Settings") as mock_settings,
+            patch("src.alerts.bot.Application") as mock_app_builder,
+        ):
+            mock_settings.return_value.telegram_bot_token = "fake-token"
+            mock_app = MagicMock()
+            mock_app.initialize = AsyncMock()
+            mock_app.start = AsyncMock()
+            mock_app.updater.start_polling = AsyncMock()
+            mock_app_builder.builder.return_value.token.return_value.build.return_value = mock_app
+
+            await start_bot("sqlite+aiosqlite:///data/test.db")
+
+            assert "data/test.db" in bot_module._db_path
+
+    @pytest.mark.asyncio
+    async def test_start_bot_handles_tilde_home_path(self):
+        """start_bot expands ~ in db path."""
+        from src.alerts import bot as bot_module
+        from src.alerts.bot import start_bot
+
+        with (
+            patch("src.alerts.bot.Settings") as mock_settings,
+            patch("src.alerts.bot.Application") as mock_app_builder,
+        ):
+            mock_settings.return_value.telegram_bot_token = "fake-token"
+            mock_app = MagicMock()
+            mock_app.initialize = AsyncMock()
+            mock_app.start = AsyncMock()
+            mock_app.updater.start_polling = AsyncMock()
+            mock_app_builder.builder.return_value.token.return_value.build.return_value = mock_app
+
+            await start_bot("sqlite+aiosqlite:///~/gold.db")
+
+            assert bot_module._db_path.startswith("/")

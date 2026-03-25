@@ -82,7 +82,6 @@ def calculate_gold_trend(db_path: str, lookback_days: int = 30) -> dict | None:
                 SELECT timestamp, price_usd
                 FROM db.price_history
                 WHERE product_type = 'xau_usd'
-                  AND source = 'yfinance'
                   AND price_usd IS NOT NULL
                   AND price_usd > 0
                   AND timestamp >= ?

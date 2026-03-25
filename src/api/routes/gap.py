@@ -35,7 +35,7 @@ async def get_current_gap():
 
 @router.get("/history")
 async def get_gap_history(
-    range: str = Query("1W", pattern="^(1W|1M|3M|1Y)$"),
+    range: str = Query("1W", pattern="^(1D|1W|1M|3M|1Y)$"),
 ):
     db_path = _get_db_path()
     gaps = await asyncio.to_thread(calculate_historical_gaps, db_path, range)

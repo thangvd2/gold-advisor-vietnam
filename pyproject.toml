@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
 dependencies = [
+    "agentscope>=1.0.17",
     "aiosqlite>=0.22.1",
     "apscheduler>=3.11.2",
     "beautifulsoup4>=4.14.3",
@@ -13,6 +14,7 @@ dependencies = [
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
     "lxml>=6.0.2",
+    "openai>=2.29.0",
     "pandas>=3.0.1",
     "pydantic-settings>=2.13.1",
     "pytest>=9.0.2",

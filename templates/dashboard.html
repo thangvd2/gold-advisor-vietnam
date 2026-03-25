@@ -73,19 +73,19 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     if (typeof initPriceChart === 'function') {
-      initPriceChart('priceChart', '/api/prices/history', '1M');
+      initPriceChart('priceChart', '1M');
     }
     if (typeof initGapChart === 'function') {
-      initGapChart('gapChart', '/api/gap/history', '1W');
+      initGapChart('gapChart', '1W');
     }
   });
 
   document.addEventListener('htmx:afterSettle', function(evt) {
     if (typeof initPriceChart === 'function' && evt.detail.target.id === 'price-chart') {
-      initPriceChart('priceChart', '/api/prices/history', '1M');
+      initPriceChart('priceChart', '1M');
     }
     if (typeof initGapChart === 'function' && evt.detail.target.id === 'gap-chart') {
-      initGapChart('gapChart', '/api/gap/history', '1W');
+      initGapChart('gapChart', '1W');
     }
   });
 </script>

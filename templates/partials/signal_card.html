@@ -6,7 +6,7 @@
   <div class="p-6 sm:p-8">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
       <div>
-        <p class="text-xs uppercase tracking-[0.2em] text-charcoal-300 mb-1 font-medium">Gold Signal</p>
+        <p class="text-xs uppercase tracking-[0.2em] text-charcoal-200 mb-1 font-medium">Gold Signal</p>
         <div class="flex items-center gap-3">
           {% if rec == "BUY" %}
             <span class="inline-flex items-center px-5 py-2 rounded-full text-sm font-bold tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
@@ -43,7 +43,7 @@
 
     <div class="mb-5">
       <div class="flex items-center justify-between mb-2">
-        <span class="text-xs uppercase tracking-wider text-charcoal-400 font-medium">Confidence</span>
+        <span class="text-xs uppercase tracking-wider text-charcoal-200 font-medium">Confidence</span>
         <span class="text-sm font-bold text-gold-400">{{ conf }}%</span>
       </div>
       <div class="w-full h-2.5 bg-charcoal-800 rounded-full overflow-hidden">
@@ -54,7 +54,87 @@
     </div>
 
     {% if signal.reasoning %}
-    <p class="text-charcoal-200 text-sm leading-relaxed italic">{{ signal.reasoning }}</p>
+    {% set lines = signal.reasoning.split('\n') %}
+    {% set ns = namespace(sections=[], current=[], title='') %}
+    {% for line in lines %}
+      {% set stripped = line | trim %}
+      {% if stripped == '' %}
+        {% if ns.current %}
+          {% set _ = ns.sections.append({'title': ns.title, 'lines': ns.current[:]}) %}
+          {% set ns.title = '' %}
+          {% set ns.current = [] %}
+        {% endif %}
+      {% elif stripped.startswith('=>') %}
+        {% if ns.current %}
+          {% set _ = ns.sections.append({'title': ns.title, 'lines': ns.current[:]}) %}
+        {% endif %}
+        {% set ns.title = stripped %}
+        {% set ns.current = [stripped] %}
+      {% elif not line.startswith('  ') %}
+        {% if ns.current %}
+          {% set _ = ns.sections.append({'title': ns.title, 'lines': ns.current[:]}) %}
+        {% endif %}
+        {% set ns.title = line %}
+        {% set ns.current = [line] %}
+      {% else %}
+        {% set _ = ns.current.append(line) %}
+      {% endif %}
+    {% endfor %}
+    {% if ns.current %}
+      {% set _ = ns.sections.append({'title': ns.title, 'lines': ns.current[:]}) %}
+    {% endif %}
+
+    {% set conclusion = namespace(found=false, text='') %}
+    {% set analysis_sections = [] %}
+    {% for section in ns.sections %}
+      {% if section.title.startswith('=>') %}
+        {% set conclusion.found = true %}
+        {% set conclusion.text = section.title %}
+      {% else %}
+        {% set _ = analysis_sections.append(section) %}
+      {% endif %}
+    {% endfor %}
+
+    <div class="space-y-2 mt-4">
+      {% for section in analysis_sections %}
+      <div class="flex gap-2.5">
+        <span class="text-gold-400/80 mt-0.5 shrink-0">
+          {% if 'Gap trend' in section.title or ('trend' in section.title.lower() and 'gap' in section.title.lower()) %}
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4"/></svg>
+          {% elif 'Gap:' in section.title or ('gap' in section.title.lower() and 'trend' not in section.title.lower()) %}
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+          {% elif 'USD' in section.title or 'VND' in section.title or 'fx' in section.title.lower() %}
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+          {% elif 'XAU' in section.title or 'gold' in section.title.lower() %}
+            <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L12.09 6.26L17 6.27L13.55 9.97L14.18 15.02L10 12.77L5.82 15.02L6.45 9.97L3 6.27L7.91 6.26L10 2Z"/></svg>
+          {% elif 'spread' in section.title.lower() %}
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/></svg>
+          {% elif 'season' in section.title.lower() %}
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/></svg>
+          {% elif 'policy' in section.title.lower() %}
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          {% else %}
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          {% endif %}
+        </span>
+        <div class="text-sm text-charcoal-100 leading-relaxed">
+          <span class="font-semibold text-gold-300">{{ section.title }}</span>
+          {% for detail in section.lines[1:] %}
+          <br><span class="text-charcoal-200">{{ detail | trim }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if conclusion.found %}
+      <div class="mt-3 pt-3 border-t border-charcoal-600/50">
+        <p class="text-sm font-semibold leading-relaxed
+          {% if 'BUY' in conclusion.text %}text-emerald-400{% elif 'SELL' in conclusion.text %}text-red-400{% else %}text-amber-400{% endif %}">
+          {{ conclusion.text }}
+        </p>
+      </div>
+      {% endif %}
+    </div>
     {% endif %}
 
     {% if seasonal_info and seasonal_info.demand_level in ('very_high', 'high') %}
@@ -74,14 +154,14 @@
     {% endif %}
 
     {% if gap %}
-    <div class="mt-4 pt-4 border-t border-charcoal-600/50 flex flex-wrap items-center gap-4 text-xs text-charcoal-400">
-      <span>Gap: <span class="text-gold-400 font-semibold">{{ "{:,}".format(gap.gap_vnd | int) if gap.gap_vnd else "—" }} VND</span></span>
-      <span>(<span class="text-gold-400 font-semibold">{{ "%.2f"|format(gap.gap_pct) if gap.gap_pct else "—" }}%</span>)</span>
+    <div class="mt-4 pt-4 border-t border-charcoal-600/50 flex flex-wrap items-center gap-4 text-xs text-charcoal-200">
+      <span>Gap: <span class="text-gold-300 font-semibold">{{ "{:,}".format(gap.gap_vnd | int) if gap.gap_vnd else "—" }} VND</span></span>
+      <span>(<span class="text-gold-300 font-semibold">{{ "%.2f"|format(gap.gap_pct) if gap.gap_pct else "—" }}%</span>)</span>
       {% if gap.ma_7d %}
-      <span class="text-charcoal-500">7d MA: {{ "%.2f"|format(gap.ma_7d) }}%</span>
+      <span class="text-charcoal-300">7d MA: {{ "%.2f"|format(gap.ma_7d) }}%</span>
       {% endif %}
       {% if gap.ma_30d %}
-      <span class="text-charcoal-500">30d MA: {{ "%.2f"|format(gap.ma_30d) }}%</span>
+      <span class="text-charcoal-300">30d MA: {{ "%.2f"|format(gap.ma_30d) }}%</span>
       {% endif %}
     </div>
     {% endif %}

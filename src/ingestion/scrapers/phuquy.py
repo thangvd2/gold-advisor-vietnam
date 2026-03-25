@@ -21,7 +21,10 @@ USER_AGENT = (
 VND_LUONG_PER_VND_CHI = 10
 
 SJC_PATTERN = re.compile(r"Vàng miếng SJC", re.IGNORECASE)
-RING_GOLD_PATTERN = re.compile(r"Nhẫn tròn Phú Quý 999\.9", re.IGNORECASE)
+RING_GOLD_PATTERN = re.compile(
+    r"(?:Nhẫn tròn Phú Quý 999\.9|Vàng 999\.9 phi SJC|Vàng 999\.0\s+phi SJC)",
+    re.IGNORECASE,
+)
 TIMESTAMP_PATTERN = re.compile(
     r"cập nhật lần cuối lúc\s+(\d{1,2}):(\d{2})\s+(\d{1,2})/(\d{1,2})/(\d{4})"
 )
@@ -82,8 +85,12 @@ class PhuQuyScraper(DataSource):
                 continue
 
             try:
-                buy = _parse_price(buy_el.get_text(strip=True))
-                sell = _parse_price(sell_el.get_text(strip=True))
+                buy_raw = buy_el.get_text(strip=True)
+                sell_raw = sell_el.get_text(strip=True)
+                if not buy_raw or not sell_raw:
+                    continue
+                buy = _parse_price(buy_raw)
+                sell = _parse_price(sell_raw)
             except (ValueError, AttributeError):
                 logger.warning("Phú Quý: failed to parse prices for row '%s'", name)
                 continue

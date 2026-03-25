@@ -289,3 +289,257 @@ class TestGetPriceSeries:
             delta = (t1 - t0).total_seconds()
             # 5-minute bucket = 300 seconds
             assert delta == pytest.approx(300, abs=60)
+
+
+class TestSourceFilter:
+    @pytest.mark.asyncio
+    async def test_filter_by_source_excludes_others(self, db_path):
+        """source='sjc' only returns SJC records, not PNJ or local."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        now = now.replace(second=0, microsecond=0)
+        records = [
+            _make_record(
+                source="sjc",
+                product_type="ring_gold",
+                sell_price=170_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+            _make_record(
+                source="pnj",
+                product_type="ring_gold",
+                sell_price=171_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+            _make_record(
+                source="local",
+                product_type="ring_gold",
+                sell_price=169_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result_sjc = get_price_series(db_path["path"], "ring_gold", "1D", source="sjc")
+        result_pnj = get_price_series(db_path["path"], "ring_gold", "1D", source="pnj")
+        result_local = get_price_series(
+            db_path["path"], "ring_gold", "1D", source="local"
+        )
+        result_all = get_price_series(db_path["path"], "ring_gold", "1D")
+
+        assert len(result_sjc) == 1
+        assert result_sjc[0]["y"] == pytest.approx(170_000_000, abs=1000)
+        assert len(result_pnj) == 1
+        assert len(result_local) == 1
+        assert len(result_all) == 1  # 3 dealers at same timestamp → 1 bucket
+
+    @pytest.mark.asyncio
+    async def test_no_match_source_returns_empty(self, db_path):
+        """source='nonexistent' returns empty list."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        records = [
+            _make_record(
+                source="sjc",
+                product_type="ring_gold",
+                sell_price=170_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result = get_price_series(
+            db_path["path"], "ring_gold", "1D", source="nonexistent"
+        )
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_none_source_returns_all(self, db_path):
+        """source=None returns all sources."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        records = [
+            _make_record(
+                source="sjc",
+                product_type="ring_gold",
+                sell_price=170_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+            _make_record(
+                source="local",
+                product_type="ring_gold",
+                sell_price=169_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result_all = get_price_series(db_path["path"], "ring_gold", "1D", source=None)
+        assert len(result_all) == 1
+
+        result_none = get_price_series(db_path["path"], "ring_gold", "1D")
+        assert len(result_none) == 1
+
+
+class TestXauUsdFxBackfill:
+    @pytest.mark.asyncio
+    async def test_null_price_vnd_backfilled_from_fx_rate(self, db_path):
+        """xau_usd with price_vnd=NULL but price_usd + usd_vnd available → computed."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        now = now.replace(second=0, microsecond=0)
+        records = [
+            _make_record(
+                source="yfinance",
+                product_type="xau_usd",
+                sell_price=3000.0,
+                price_usd=3000.0,
+                price_vnd=None,
+                timestamp=now,
+            ),
+            _make_record(
+                source="yfinance",
+                product_type="usd_vnd",
+                sell_price=25500.0,
+                timestamp=now,
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result = get_price_series(db_path["path"], "xau_usd", "1D")
+
+        assert len(result) == 1
+        expected = 3000.0 * 25500.0
+        assert result[0]["y"] == pytest.approx(expected, rel=0.01)
+
+    @pytest.mark.asyncio
+    async def test_existing_price_vnd_takes_priority(self, db_path):
+        """xau_usd with price_vnd set uses actual value, not FX computation."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        now = now.replace(second=0, microsecond=0)
+        records = [
+            _make_record(
+                source="yfinance",
+                product_type="xau_usd",
+                sell_price=3000.0,
+                price_usd=3000.0,
+                price_vnd=143_000_000,
+                timestamp=now,
+            ),
+            _make_record(
+                source="yfinance",
+                product_type="usd_vnd",
+                sell_price=25500.0,
+                timestamp=now,
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result = get_price_series(db_path["path"], "xau_usd", "1D")
+
+        assert len(result) == 1
+        assert result[0]["y"] == pytest.approx(143_000_000, rel=0.01)
+
+    @pytest.mark.asyncio
+    async def test_fx_rate_from_different_timestamp_used(self, db_path):
+        """FX rate from earlier timestamp is used for backfill."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        now = now.replace(second=0, microsecond=0)
+        earlier = now - timedelta(hours=1)
+        records = [
+            _make_record(
+                source="yfinance",
+                product_type="usd_vnd",
+                sell_price=25400.0,
+                timestamp=earlier,
+            ),
+            _make_record(
+                source="yfinance",
+                product_type="xau_usd",
+                sell_price=3000.0,
+                price_usd=3000.0,
+                price_vnd=None,
+                timestamp=now,
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result = get_price_series(db_path["path"], "xau_usd", "1D")
+
+        assert len(result) == 1
+        expected = 3000.0 * 25400.0
+        assert result[0]["y"] == pytest.approx(expected, rel=0.01)
+
+    @pytest.mark.asyncio
+    async def test_no_fx_rate_available_returns_no_data(self, db_path):
+        """xau_usd with NULL price_vnd and no usd_vnd rows → empty."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        records = [
+            _make_record(
+                source="yfinance",
+                product_type="xau_usd",
+                sell_price=3000.0,
+                price_usd=3000.0,
+                price_vnd=None,
+                timestamp=now,
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result = get_price_series(db_path["path"], "xau_usd", "1D")
+        assert result == []
+
+    @pytest.mark.asyncio
+    async def test_source_filter_on_xau_usd(self, db_path):
+        """source filter applies to xau_usd query too."""
+        from src.analysis.prices import get_price_series
+
+        now = datetime.now(timezone.utc)
+        now = now.replace(second=0, microsecond=0)
+        records = [
+            _make_record(
+                source="yfinance",
+                product_type="xau_usd",
+                price_usd=3000.0,
+                price_vnd=143_000_000,
+                timestamp=now,
+            ),
+            _make_record(
+                source="other",
+                product_type="xau_usd",
+                price_usd=3050.0,
+                price_vnd=145_000_000,
+                timestamp=now,
+            ),
+            _make_record(
+                source="yfinance",
+                product_type="usd_vnd",
+                sell_price=25500.0,
+                timestamp=now,
+            ),
+        ]
+        await _seed_records(db_path["session_factory"], records)
+
+        result = get_price_series(db_path["path"], "xau_usd", "1D", source="yfinance")
+        assert len(result) == 1
+        assert result[0]["y"] == pytest.approx(143_000_000, rel=0.01)
+
+        result = get_price_series(db_path["path"], "xau_usd", "1D", source="other")
+        assert len(result) == 1
+        assert result[0]["y"] == pytest.approx(145_000_000, rel=0.01)

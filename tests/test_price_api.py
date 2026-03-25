@@ -221,3 +221,64 @@ class TestGetPriceHistory:
         assert resp.status_code == 200
         data = resp.json()
         assert data["range"] == "1M"
+
+    @pytest.mark.asyncio
+    async def test_source_query_param_filters_data(self, price_test_db):
+        """source=local returns only local ring gold prices."""
+        now = datetime.now(timezone.utc)
+        records = [
+            _make_record(
+                source="local",
+                product_type="ring_gold",
+                sell_price=169_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+            _make_record(
+                source="sjc",
+                product_type="ring_gold",
+                sell_price=170_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+        ]
+        await _seed_records(price_test_db["session_factory"], records)
+
+        resp = price_test_db["client"].get(
+            "/api/prices/history?product_type=ring_gold&range=1D&source=local"
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["prices"]) == 1
+        assert data["prices"][0]["y"] == pytest.approx(169_000_000, abs=1000)
+
+    @pytest.mark.asyncio
+    async def test_source_param_defaults_to_none(self, price_test_db):
+        """No source param → returns all sources."""
+        now = datetime.now(timezone.utc)
+        records = [
+            _make_record(
+                source="local",
+                product_type="ring_gold",
+                sell_price=169_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+            _make_record(
+                source="sjc",
+                product_type="ring_gold",
+                sell_price=170_000_000,
+                timestamp=now,
+                currency="VND",
+            ),
+        ]
+        await _seed_records(price_test_db["session_factory"], records)
+
+        resp = price_test_db["client"].get(
+            "/api/prices/history?product_type=ring_gold&range=1D"
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["prices"]) == 1

@@ -1,4 +1,4 @@
-"""Vietcombank market rate fetcher."""
+"""Vietcombank market rate fetcher with yfinance fallback."""
 
 import logging
 from datetime import datetime, timezone
@@ -11,41 +11,51 @@ from src.ingestion.models import FetchedPrice
 
 logger = logging.getLogger(__name__)
 
-VCB_API_URL = "https://www.vietcombank.com.vn/api/exrates/usd"
+PRIMARY_URL = "https://www.vietcombank.com.vn/api/exrates/usd"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+
+
+def _fetch_yfinance_fallback() -> float | None:
+    import yfinance as yf
+
+    ticker = yf.Ticker("USDVND=X")
+    price = ticker.fast_info.last_price
+    return price if price and price > 0 else None
 
 
 class VietcombankFxRateFetcher(FxRateFetcher):
     @retry(max_retries=3, backoff_factor=1.0)
     async def fetch(self) -> list[FetchedPrice]:
+        selling_rate = None
+
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
                 response = await client.get(
-                    VCB_API_URL,
+                    PRIMARY_URL,
                     headers={"User-Agent": USER_AGENT},
                 )
-                if response.status_code != 200:
-                    logger.warning(
-                        "Vietcombank API returned status %d", response.status_code
-                    )
-                    return []
+                if response.status_code == 200:
+                    data = response.json()
+                    selling_rate = data.get("sellingRate") or data.get("sellRate")
+        except Exception as exc:
+            logger.warning("Vietcombank API failed: %s", exc)
 
-                data = response.json()
-                selling_rate = data.get("sellingRate") or data.get("sellRate")
-                if not selling_rate or float(selling_rate) <= 0:
-                    logger.warning("Vietcombank API returned invalid rate: %s", data)
-                    return []
+        if not selling_rate:
+            selling_rate = _fetch_yfinance_fallback()
+            if selling_rate:
+                logger.info("Using yfinance USDVND=X fallback: %.2f", selling_rate)
 
-                now = datetime.now(timezone.utc)
-                return [
-                    FetchedPrice(
-                        source="vietcombank",
-                        product_type="usd_vnd",
-                        sell_price=float(selling_rate),
-                        currency="VND",
-                        timestamp=now,
-                    )
-                ]
-        except Exception:
-            logger.warning("Failed to fetch Vietcombank FX rate", exc_info=True)
+        if not selling_rate or float(selling_rate) <= 0:
+            logger.warning("No valid USD/VND rate from any source")
             return []
+
+        now = datetime.now(timezone.utc)
+        return [
+            FetchedPrice(
+                source="vietcombank",
+                product_type="usd_vnd",
+                sell_price=float(selling_rate),
+                currency="VND",
+                timestamp=now,
+            )
+        ]

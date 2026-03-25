@@ -1,11 +1,13 @@
 import asyncio
+import logging
 from collections import defaultdict
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from src.config import Settings
+from src.config import Settings, VNTZ
 from src.engine.pipeline import compute_signal
 from src.engine.types import SignalMode
 from src.storage.database import async_session
@@ -17,6 +19,22 @@ router = APIRouter()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+def _vn_time(value, fmt="%d/%m/%Y %H:%M"):
+    if value is None:
+        return "—"
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value)
+        except (ValueError, TypeError):
+            return value[:19] if len(value) >= 19 else value
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(VNTZ).strftime(fmt)
+
+
+templates.env.filters["vn_time"] = _vn_time
 
 
 def get_settings() -> Settings:
@@ -64,7 +82,15 @@ async def get_dashboard_prices():
 
         entry["products"].append(product)
         if entry["fetched_at"] is None:
-            entry["fetched_at"] = p.fetched_at.isoformat() if p.fetched_at else None
+            if p.fetched_at:
+                vn_dt = (
+                    p.fetched_at.astimezone(VNTZ)
+                    if p.fetched_at.tzinfo
+                    else p.fetched_at.replace(tzinfo=timezone.utc).astimezone(VNTZ)
+                )
+                entry["fetched_at"] = vn_dt.isoformat()
+            else:
+                entry["fetched_at"] = None
 
     dealers = list(grouped.values())
     for d in dealers:
@@ -205,7 +231,15 @@ async def get_prices_partial(request: Request):
 
             entry["products"].append(product)
             if entry["fetched_at"] is None:
-                entry["fetched_at"] = p.fetched_at.isoformat() if p.fetched_at else None
+                if p.fetched_at:
+                    vn_dt = (
+                        p.fetched_at.astimezone(VNTZ)
+                        if p.fetched_at.tzinfo
+                        else p.fetched_at.replace(tzinfo=timezone.utc).astimezone(VNTZ)
+                    )
+                    entry["fetched_at"] = vn_dt.isoformat()
+                else:
+                    entry["fetched_at"] = None
 
         dealers = list(grouped.values())
 
@@ -233,6 +267,7 @@ async def get_gap_partial(request: Request):
             context={"gap": gap},
         )
     except Exception:
+        logging.getLogger(__name__).exception("Gap calculation failed")
         return templates.TemplateResponse(
             request,
             "partials/gap_display.html",
