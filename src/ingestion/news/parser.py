@@ -12,9 +12,32 @@ def _parse_rfc2822(date_str: str) -> datetime | None:
     try:
         from email.utils import parsedate_to_datetime
 
-        return parsedate_to_datetime(date_str).astimezone(timezone.utc)
+        date_str = _normalize_gmt_offset(date_str)
+        dt = parsedate_to_datetime(date_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
     except Exception:
         return None
+
+
+def _normalize_gmt_offset(date_str: str) -> str:
+    """Convert non-standard 'GMT+7' / 'GMT-5' offsets to RFC2822 '+0700' / '-0500'.
+
+    Python's parsedate_to_datetime does not recognize 'GMT+N' as a timezone
+    and returns tzinfo=None. This causes times to be treated as UTC when they
+    are actually local to the stated offset.
+    """
+    import re
+
+    m = re.search(r"GMT([+-])(\d{1,2})(?::(\d{2}))?(?!\d)", date_str)
+    if m:
+        sign = m.group(1)
+        hours = m.group(2).zfill(2)
+        minutes = m.group(3) or "00"
+        replacement = f"{sign}{hours}{minutes}"
+        date_str = date_str[: m.start()] + replacement + date_str[m.end() :]
+    return date_str
 
 
 def _parse_iso8601(date_str: str) -> datetime | None:

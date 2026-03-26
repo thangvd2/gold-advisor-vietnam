@@ -14,22 +14,26 @@ class TestGetModeWeights:
 
         weights = get_mode_weights(SignalMode.SAVER)
 
-        assert weights["gap"] == 0.3
-        assert weights["spread"] == 0.1
-        assert weights["trend"] == 0.4
-        assert weights["fx_trend"] == 0.1
-        assert weights["gold_trend"] == 0.1
+        assert weights["gap"] == 0.25
+        assert weights["spread"] == 0.05
+        assert weights["trend"] == 0.30
+        assert weights["fx_trend"] == 0.10
+        assert weights["gold_trend"] == 0.10
+        assert weights["local_spread"] == 0.05
+        assert weights["local_trend"] == 0.15
 
     def test_trader_weights(self):
         from src.engine.modes import get_mode_weights
 
         weights = get_mode_weights(SignalMode.TRADER)
 
-        assert weights["gap"] == 0.5
-        assert weights["spread"] == 0.2
-        assert weights["trend"] == 0.1
-        assert weights["fx_trend"] == 0.1
-        assert weights["gold_trend"] == 0.1
+        assert weights["gap"] == 0.35
+        assert weights["spread"] == 0.10
+        assert weights["trend"] == 0.10
+        assert weights["fx_trend"] == 0.10
+        assert weights["gold_trend"] == 0.10
+        assert weights["local_spread"] == 0.10
+        assert weights["local_trend"] == 0.15
 
     def test_saver_weights_sum_to_one(self):
         """Saver mode weights must sum to 1.0."""

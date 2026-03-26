@@ -31,7 +31,7 @@
         {% for dealer in dealers %}
         {% if dealer.source not in ("yfinance", "goldapi", "vietcombank", "dxy") %}
         <tr class="hover:bg-charcoal-600/20 transition-colors">
-          <td class="px-4 sm:px-6 py-3 font-semibold text-charcoal-100 whitespace-nowrap">{{ dealer.source }}</td>
+          <td class="px-4 sm:px-6 py-3 font-semibold text-charcoal-100 whitespace-nowrap">{{ "Tiệm vàng gần nhà" if dealer.source == "local" else dealer.source }}</td>
           {% set sjc = dealer.products | selectattr('product_type', 'equalto', 'sjc_bar') | first %}
           {% set ring = dealer.products | selectattr('product_type', 'equalto', 'ring_gold') | first %}
           {% if sjc %}

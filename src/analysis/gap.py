@@ -139,13 +139,13 @@ def calculate_historical_gaps(db_path: str, range: str = "1W") -> list[dict]:
                 gap_vnd,
                 gap_pct,
                 CASE WHEN bucket_ts - MIN(bucket_ts) OVER () >= INTERVAL 7 DAYS
-                    THEN AVG(gap_vnd) OVER (
+                    THEN AVG(gap_pct) OVER (
                         ORDER BY bucket_ts ASC
                         RANGE BETWEEN INTERVAL 6 DAYS PRECEDING AND CURRENT ROW
                     )
                 END as ma_7d,
                 CASE WHEN bucket_ts - MIN(bucket_ts) OVER () >= INTERVAL 30 DAYS
-                    THEN AVG(gap_vnd) OVER (
+                    THEN AVG(gap_pct) OVER (
                         ORDER BY bucket_ts ASC
                         RANGE BETWEEN INTERVAL 29 DAYS PRECEDING AND CURRENT ROW
                     )
@@ -170,5 +170,156 @@ def calculate_historical_gaps(db_path: str, range: str = "1W") -> list[dict]:
             }
             for r in rows
         ]
+    finally:
+        con.close()
+
+
+def get_local_ring_gold_data(db_path: str) -> dict:
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+
+    result = {
+        "latest_buy": None,
+        "latest_sell": None,
+        "spread_vnd": None,
+        "spread_pct": None,
+        "price_history": [],
+        "trend_7d": None,
+        "trend_30d": None,
+        "data_points": 0,
+    }
+
+    con = get_duckdb_connection(db_path)
+    try:
+        cursor = con.execute("""
+            SELECT buy_price, sell_price, timestamp
+            FROM db.price_history
+            WHERE source = 'local' AND product_type = 'ring_gold'
+            ORDER BY timestamp DESC
+            LIMIT 1
+        """)
+        latest = cursor.fetchone()
+
+        if latest is None:
+            return result
+
+        latest_buy, latest_sell, _ = latest
+        result["latest_buy"] = float(latest_buy) if latest_buy is not None else None
+        result["latest_sell"] = float(latest_sell) if latest_sell is not None else None
+
+        if latest_buy is not None and latest_sell is not None and latest_sell > 0:
+            result["spread_vnd"] = float(latest_sell - latest_buy)
+            result["spread_pct"] = float((latest_sell - latest_buy) / latest_sell * 100)
+
+        cursor = con.execute(
+            """
+            SELECT
+                DATE(timestamp) as day,
+                AVG(buy_price) as avg_buy,
+                AVG(sell_price) as avg_sell
+            FROM db.price_history
+            WHERE source = 'local'
+              AND product_type = 'ring_gold'
+              AND timestamp >= ?
+            GROUP BY 1
+            ORDER BY day ASC
+        """,
+            [cutoff],
+        )
+        columns = [desc[0] for desc in cursor.description]
+        history_rows = [dict(zip(columns, r)) for r in cursor.fetchall()]
+        result["data_points"] = len(history_rows)
+
+        result["price_history"] = [
+            {
+                "timestamp": r["day"].isoformat(),
+                "buy_price": float(r["avg_buy"]) if r["avg_buy"] is not None else None,
+                "sell_price": float(r["avg_sell"])
+                if r["avg_sell"] is not None
+                else None,
+            }
+            for r in history_rows
+        ]
+
+        cursor = con.execute(
+            """
+            WITH recent AS (
+                SELECT AVG(sell_price) as avg_sell
+                FROM db.price_history
+                WHERE source = 'local'
+                  AND product_type = 'ring_gold'
+                  AND sell_price IS NOT NULL
+                  AND timestamp >= ?
+                  AND timestamp < ?
+            ),
+            prior AS (
+                SELECT AVG(sell_price) as avg_sell
+                FROM db.price_history
+                WHERE source = 'local'
+                  AND product_type = 'ring_gold'
+                  AND sell_price IS NOT NULL
+                  AND timestamp >= ?
+                  AND timestamp < ?
+            )
+            SELECT r.avg_sell as recent_avg, p.avg_sell as prior_avg
+            FROM recent r, prior p
+        """,
+            [
+                datetime.now(timezone.utc) - timedelta(days=3),
+                datetime.now(timezone.utc),
+                datetime.now(timezone.utc) - timedelta(days=7),
+                datetime.now(timezone.utc) - timedelta(days=4),
+            ],
+        )
+        trend_7d = cursor.fetchone()
+        if (
+            trend_7d
+            and trend_7d[0] is not None
+            and trend_7d[1] is not None
+            and trend_7d[1] > 0
+        ):
+            result["trend_7d"] = float((trend_7d[0] - trend_7d[1]) / trend_7d[1] * 100)
+
+        cursor = con.execute(
+            """
+            WITH recent AS (
+                SELECT AVG(sell_price) as avg_sell
+                FROM db.price_history
+                WHERE source = 'local'
+                  AND product_type = 'ring_gold'
+                  AND sell_price IS NOT NULL
+                  AND timestamp >= ?
+                  AND timestamp < ?
+            ),
+            prior AS (
+                SELECT AVG(sell_price) as avg_sell
+                FROM db.price_history
+                WHERE source = 'local'
+                  AND product_type = 'ring_gold'
+                  AND sell_price IS NOT NULL
+                  AND timestamp >= ?
+                  AND timestamp < ?
+            )
+            SELECT r.avg_sell as recent_avg, p.avg_sell as prior_avg
+            FROM recent r, prior p
+        """,
+            [
+                datetime.now(timezone.utc) - timedelta(days=3),
+                datetime.now(timezone.utc),
+                datetime.now(timezone.utc) - timedelta(days=30),
+                datetime.now(timezone.utc) - timedelta(days=27),
+            ],
+        )
+        trend_30d = cursor.fetchone()
+        if (
+            trend_30d
+            and trend_30d[0] is not None
+            and trend_30d[1] is not None
+            and trend_30d[1] > 0
+        ):
+            result["trend_30d"] = float(
+                (trend_30d[0] - trend_30d[1]) / trend_30d[1] * 100
+            )
+
+        return result
     finally:
         con.close()

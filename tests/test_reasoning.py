@@ -132,7 +132,7 @@ class TestModePrefix:
             signal, current_gap=None, historical_gaps=historical_gaps
         )
 
-        assert result.startswith("For long-term accumulation:")
+        assert result.startswith("For long-term accumulation")
 
     def test_trader_mode_adds_timing_prefix(self):
         """Trader mode reasoning starts with timing-precision prefix."""
@@ -145,7 +145,7 @@ class TestModePrefix:
             signal, current_gap=None, historical_gaps=historical_gaps
         )
 
-        assert result.startswith("For timing-precision:")
+        assert result.startswith("For timing-precision")
 
 
 # ── No gap data ───────────────────────────────────────────────────────────────

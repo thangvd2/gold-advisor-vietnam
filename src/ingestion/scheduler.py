@@ -49,7 +49,11 @@ def fetch_news_job(settings: Settings) -> None:
 
         feeds = [
             {"url": "https://vnexpress.net/rss/kinh-doanh.rss", "source": "VNExpress"},
-            {"url": "https://www.kitco.com/news/gold/rss", "source": "Kitco"},
+            {"url": "https://tuoitre.vn/rss/kinh-doanh.rss", "source": "Tuoi Tre"},
+            {
+                "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+                "source": "NYT",
+            },
         ]
 
         loop = asyncio.new_event_loop()
@@ -90,6 +94,7 @@ def start_scheduler(
         args=[sources, fx_fetcher, settings],
         id="gold_price_fetch",
         replace_existing=True,
+        misfire_grace_time=120,
     )
     scheduler.add_job(
         check_and_dispatch_alerts,
@@ -98,6 +103,7 @@ def start_scheduler(
         args=[settings],
         id="alert_dispatch",
         replace_existing=True,
+        misfire_grace_time=120,
     )
     scheduler.add_job(
         fetch_news_job,
@@ -106,6 +112,7 @@ def start_scheduler(
         args=[settings],
         id="news_fetch",
         replace_existing=True,
+        misfire_grace_time=300,
     )
     scheduler.start()
     logger.info(

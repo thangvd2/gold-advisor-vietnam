@@ -53,7 +53,24 @@
       </div>
     </div>
 
-    {% if signal.reasoning %}
+    <div class="mt-4 flex justify-end">
+      <a href="/dashboard/report?mode={{ mode.lower() }}"
+         class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium rounded-lg
+                bg-charcoal-800/80 text-charcoal-300 hover:text-gold-400 hover:bg-charcoal-800
+                border border-charcoal-600/50 hover:border-gold-500/30 transition-all duration-200">
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        View Full Report
+      </a>
+    </div>
+
+    {% if report and report.compact_reasoning %}
+    <div class="mt-4 space-y-1.5">
+      <div data-lang="en" class="block text-sm text-charcoal-100 leading-relaxed">{{ report.compact_reasoning.en | e }}</div>
+      <div data-lang="vn" class="block text-sm text-charcoal-100 leading-relaxed">{{ report.compact_reasoning.vn | e }}</div>
+    </div>
+    {% elif signal.reasoning %}
     {% set lines = signal.reasoning.split('\n') %}
     {% set ns = namespace(sections=[], current=[], title='') %}
     {% for line in lines %}

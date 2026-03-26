@@ -20,7 +20,7 @@ function getChartDefaults(extra) {
     maintainAspectRatio: false,
     animation: { duration: 400 },
     plugins: {
-      legend: { display: false },
+      legend: { display: true, position: 'top', align: 'end', labels: { color: '#E0E0E0', usePointStyle: true, pointStyle: 'line', padding: 16, font: { size: 11, family: 'DM Sans' } } },
       tooltip: {
         backgroundColor: '#1E1E1E',
         borderColor: 'rgba(212,175,55,0.3)',
@@ -130,7 +130,7 @@ function initPriceChart(canvasId, defaultRange) {
       y: { grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: '#B0B0B0', font: { size: 11, family: 'DM Sans' }, callback: function(value) { return (value / 1000000).toFixed(1) + 'M'; } } }
     },
     plugins: {
-      legend: { display: false },
+      legend: { display: true, position: 'top', align: 'end', labels: { color: '#E0E0E0', usePointStyle: true, pointStyle: 'line', padding: 16, font: { size: 11, family: 'DM Sans' } } },
       tooltip: {
         backgroundColor: '#1E1E1E', borderColor: 'rgba(212,175,55,0.3)', borderWidth: 1,
         titleColor: '#F5F5F5', bodyColor: '#E0E0E0', padding: 12, cornerRadius: 8,
@@ -209,7 +209,7 @@ function initGapChart(canvasId, defaultRange) {
       y: { title: { display: true, text: 'Gap (%)', color: '#B0B0B0', font: { size: 11, family: 'DM Sans' } }, grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, ticks: { color: '#B0B0B0', font: { size: 11, family: 'DM Sans' } } }
     },
     plugins: {
-      legend: { display: false },
+      legend: { display: true, position: 'top', align: 'end', labels: { color: '#E0E0E0', usePointStyle: true, pointStyle: 'line', padding: 16, font: { size: 11, family: 'DM Sans' } } },
       tooltip: {
         backgroundColor: '#1E1E1E', borderColor: 'rgba(212,175,55,0.3)', borderWidth: 1,
         titleColor: '#F5F5F5', bodyColor: '#E0E0E0', padding: 12, cornerRadius: 8,

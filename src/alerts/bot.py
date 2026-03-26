@@ -4,6 +4,7 @@ import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from telegram import Update
 from telegram.ext import (
@@ -14,7 +15,7 @@ from telegram.ext import (
     filters,
 )
 
-from src.config import Settings
+from src.config import Settings, VNTZ
 from src.engine.pipeline import compute_signal
 from src.engine.types import Recommendation, Signal, SignalMode
 
@@ -25,6 +26,65 @@ _application: Application | None = None
 _db_path: str = ""
 
 LOCAL_STORE_NAME = "Tiệm vàng gần nhà"
+
+_DATE_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})$")
+_TIME_RE = re.compile(r"^(\d{1,2}:\d{2})$")
+_DATETIME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})$")
+
+
+def _parse_vn_datetime(args: list[str]) -> datetime | None:
+    """Parse optional date/time arguments as Vietnam timezone, return UTC datetime.
+
+    Supported formats from args[2:]:
+      - (none) → now
+      - YYYY-MM-DD → that date, current time
+      - HH:MM → today at that time
+      - YYYY-MM-DD HH:MM → exact date and time
+
+    Returns a UTC-aware datetime, or None if parsing fails.
+    """
+    if len(args) < 3:
+        return None
+
+    remainder = " ".join(args[2:]).strip()
+
+    m = _DATETIME_RE.match(remainder)
+    if m:
+        dt_str = f"{m.group(1)} {m.group(2)}"
+        try:
+            return (
+                datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
+                .replace(tzinfo=VNTZ)
+                .astimezone(timezone.utc)
+            )
+        except ValueError:
+            return None
+
+    m = _DATE_RE.match(remainder)
+    if m:
+        try:
+            return (
+                datetime.strptime(m.group(1), "%Y-%m-%d")
+                .replace(
+                    hour=datetime.now(VNTZ).hour,
+                    minute=datetime.now(VNTZ).minute,
+                    tzinfo=VNTZ,
+                )
+                .astimezone(timezone.utc)
+            )
+        except ValueError:
+            return None
+
+    m = _TIME_RE.match(remainder)
+    if m:
+        try:
+            today = datetime.now(VNTZ).date()
+            dt = datetime.strptime(f"{today} {m.group(1)}", "%Y-%m-%d %H:%M")
+            return dt.replace(tzinfo=VNTZ).astimezone(timezone.utc)
+        except ValueError:
+            return None
+
+    return None
 
 
 def _recommendation_emoji(rec: Recommendation) -> str:
@@ -54,9 +114,11 @@ def _format_signal_message(signal: Signal) -> str:
     return "\n".join(lines)
 
 
-def _save_local_price(buy_price: float, sell_price: float) -> bool:
-    now = datetime.now(timezone.utc)
-    fetched_at = now.isoformat()
+def _save_local_price(
+    buy_price: float, sell_price: float, timestamp: datetime | None = None
+) -> bool:
+    now = timestamp or datetime.now(timezone.utc)
+    fetched_at = datetime.now(timezone.utc).isoformat()
     spread = sell_price - buy_price
 
     conn = sqlite3.connect(_db_path)
@@ -76,7 +138,7 @@ def _save_local_price(buy_price: float, sell_price: float) -> bool:
                 "VND",
                 now,
                 fetched_at,
-                "valid",
+                "manual",
             ),
         )
         conn.commit()
@@ -177,9 +239,11 @@ async def update_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             "ℹ️ Dùng: /update <giá_mua> <giá_bán> [ngày] [giờ]\n"
             "Ví dụ:\n"
             "  /update 175000 176500\n"
+            "  /update 175000 176500 11:00\n"
             "  /update 175000 176500 2026-03-24\n"
             "  /update 175000 176500 2026-03-24 11:00\n\n"
-            "Giá tính theo nghìn VND/lượng (vd: 175000 = 175.000đ)"
+            "Giá tính theo nghìn VND/lượng (vd: 175000 = 175.000đ)\n"
+            "Thời gian theo giờ Việt Nam (UTC+7)"
         )
         return
 
@@ -209,7 +273,23 @@ async def update_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         )
         return
 
-    success = await asyncio.to_thread(_save_local_price, buy_price, sell_price)
+    parsed_ts = _parse_vn_datetime(context.args)
+
+    if len(context.args) >= 3 and parsed_ts is None:
+        await update.message.reply_text(
+            "❌ Thời gian không hợp lệ.\nDùng: YYYY-MM-DD, HH:MM, hoặc YYYY-MM-DD HH:MM"
+        )
+        return
+
+    display_time = (
+        parsed_ts.astimezone(VNTZ).strftime("%d/%m/%Y %H:%M")
+        if parsed_ts
+        else datetime.now(VNTZ).strftime("%d/%m/%Y %H:%M")
+    )
+
+    success = await asyncio.to_thread(
+        _save_local_price, buy_price, sell_price, parsed_ts
+    )
 
     if success:
         spread = sell_price - buy_price
@@ -217,7 +297,8 @@ async def update_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             f"✅ Đã cập nhật giá {LOCAL_STORE_NAME}:\n\n"
             f"    Mua:  {buy_price:,.0f} đ/lượng\n"
             f"    Bán:  {sell_price:,.0f} đ/lượng\n"
-            f"    Chênh: {spread:,.0f} đ"
+            f"    Chênh: {spread:,.0f} đ\n"
+            f"    Thời gian: {display_time}"
         )
     else:
         await update.message.reply_text("❌ Lỗi khi lưu giá. Thử lại sau.")
@@ -291,7 +372,7 @@ async def history_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     lines = [f"📜 Lịch sử {LOCAL_STORE_NAME} ({len(rows)} cập nhật gần nhất):\n"]
     for r in rows:
         lines.append(
-            f"  {str(r[3])[:16]}  M: {r[0]:,.0f}  B: {r[1]:,.0f}  ({r[2]:,.0f})"
+            f"  {datetime.fromisoformat(str(r[3])).astimezone(VNTZ).strftime('%d/%m/%Y %H:%M')}  M: {r[0]:,.0f}  B: {r[1]:,.0f}  ({r[2]:,.0f})"
         )
 
     await update.message.reply_text("\n".join(lines))

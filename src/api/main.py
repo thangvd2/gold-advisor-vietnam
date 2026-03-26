@@ -29,6 +29,7 @@ from src.ingestion.scrapers.phuquy import PhuQuyScraper
 from src.ingestion.scrapers.sjc import SJCScraper
 from src.ingestion.scrapers.pnj import PNJScraper
 from src.ingestion.scrapers.btmc import BTMCScraper
+from src.ingestion.scrapers.kimphat import KimPhatScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
 from src.alerts.bot import start_bot, stop_bot
 from src.storage.database import init_db
@@ -68,7 +69,8 @@ async def lifespan(app: FastAPI):
     sjc = SJCScraper()
     pnj = PNJScraper()
     btmc = BTMCScraper()
-    vn_scrapers = [doji, phuquy, sjc, pnj, btmc]
+    kimphat = KimPhatScraper()
+    vn_scrapers = [doji, phuquy, sjc, pnj, btmc, kimphat]
     sources = [gold_fetcher, dxy_fetcher] + vn_scrapers
 
     start_scheduler(app_state, sources, fx_fetcher, settings)
@@ -76,13 +78,25 @@ async def lifespan(app: FastAPI):
     set_app_state(app_state)
 
     from src.ingestion.normalizer import fetch_and_store_all
+    from src.ingestion.news.store import fetch_and_store_news
 
     try:
         await fetch_and_store_all(sources, fx_fetcher, settings)
     except Exception as e:
-        import logging
-
         logging.getLogger(__name__).warning(f"Initial data fetch failed: {e}")
+
+    news_feeds = [
+        {"url": "https://vnexpress.net/rss/kinh-doanh.rss", "source": "VNExpress"},
+        {"url": "https://tuoitre.vn/rss/kinh-doanh.rss", "source": "Tuoi Tre"},
+        {
+            "url": "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml",
+            "source": "NYT",
+        },
+    ]
+    try:
+        await fetch_and_store_news(feeds=news_feeds, database_url=settings.database_url)
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Initial news fetch failed: {e}")
 
     yield
     await stop_bot()

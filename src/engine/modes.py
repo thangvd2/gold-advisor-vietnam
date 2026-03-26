@@ -8,18 +8,22 @@ from src.engine.types import SignalMode
 
 MODE_WEIGHTS: dict[SignalMode, dict[str, float]] = {
     SignalMode.SAVER: {
-        "gap": 0.3,
-        "spread": 0.1,
-        "trend": 0.4,
-        "fx_trend": 0.1,
-        "gold_trend": 0.1,
+        "gap": 0.25,
+        "spread": 0.05,
+        "trend": 0.30,
+        "fx_trend": 0.10,
+        "gold_trend": 0.10,
+        "local_spread": 0.05,
+        "local_trend": 0.15,
     },
     SignalMode.TRADER: {
-        "gap": 0.5,
-        "spread": 0.2,
-        "trend": 0.1,
-        "fx_trend": 0.1,
-        "gold_trend": 0.1,
+        "gap": 0.35,
+        "spread": 0.10,
+        "trend": 0.10,
+        "fx_trend": 0.10,
+        "gold_trend": 0.10,
+        "local_spread": 0.10,
+        "local_trend": 0.15,
     },
 }
 

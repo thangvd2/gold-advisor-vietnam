@@ -1,7 +1,9 @@
 """Normalizer pipeline: fetch → convert → store → quality check."""
 
 import logging
+from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import Settings
@@ -14,6 +16,23 @@ from src.storage.repository import save_price
 
 logger = logging.getLogger(__name__)
 
+MANUAL_OVERRIDE_MINUTES = 20
+
+
+async def _has_recent_manual_override(session: AsyncSession) -> bool:
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=MANUAL_OVERRIDE_MINUTES)
+    result = await session.execute(
+        text(
+            """SELECT 1 FROM price_history
+               WHERE source = 'local' AND product_type = 'ring_gold'
+                 AND validation_status = 'manual'
+                 AND timestamp >= :cutoff
+               LIMIT 1"""
+        ),
+        {"cutoff": cutoff},
+    )
+    return result.scalar() is not None
+
 
 async def fetch_and_store(
     session: AsyncSession,
@@ -22,6 +41,14 @@ async def fetch_and_store(
     settings: Settings,
 ) -> dict:
     source = gold_fetcher.source_name
+
+    if source == "local":
+        if await _has_recent_manual_override(session):
+            logger.debug(
+                "Skipping auto-scrape: manual override active for local ring gold"
+            )
+            await session.commit()
+            return {"status": "skipped", "prices_saved": 0, "alerts": 0}
 
     try:
         prices = await gold_fetcher.fetch()

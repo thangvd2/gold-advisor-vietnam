@@ -204,11 +204,13 @@ class TestModeWeightsWiring:
         signal = compute_signal(db_path["path"], mode=SignalMode.SAVER)
 
         factor_weights = {f.name: f.weight for f in signal.factors}
-        assert factor_weights["gap"] == pytest.approx(0.3)
-        assert factor_weights["spread"] == pytest.approx(0.1)
-        assert factor_weights["trend"] == pytest.approx(0.4)
-        assert factor_weights["fx_trend"] == pytest.approx(0.1)
-        assert factor_weights["gold_trend"] == pytest.approx(0.1)
+        assert factor_weights["gap"] == pytest.approx(0.25)
+        assert factor_weights["spread"] == pytest.approx(0.05)
+        assert factor_weights["trend"] == pytest.approx(0.30)
+        assert factor_weights["fx_trend"] == pytest.approx(0.10)
+        assert factor_weights["gold_trend"] == pytest.approx(0.10)
+        assert factor_weights["local_spread"] == pytest.approx(0.05)
+        assert factor_weights["local_trend"] == pytest.approx(0.15)
 
     @pytest.mark.asyncio
     async def test_trader_mode_applies_correct_weights(self, db_path):
@@ -219,11 +221,13 @@ class TestModeWeightsWiring:
         signal = compute_signal(db_path["path"], mode=SignalMode.TRADER)
 
         factor_weights = {f.name: f.weight for f in signal.factors}
-        assert factor_weights["gap"] == pytest.approx(0.5)
-        assert factor_weights["spread"] == pytest.approx(0.2)
-        assert factor_weights["trend"] == pytest.approx(0.1)
-        assert factor_weights["fx_trend"] == pytest.approx(0.1)
-        assert factor_weights["gold_trend"] == pytest.approx(0.1)
+        assert factor_weights["gap"] == pytest.approx(0.35)
+        assert factor_weights["spread"] == pytest.approx(0.10)
+        assert factor_weights["trend"] == pytest.approx(0.10)
+        assert factor_weights["fx_trend"] == pytest.approx(0.10)
+        assert factor_weights["gold_trend"] == pytest.approx(0.10)
+        assert factor_weights["local_spread"] == pytest.approx(0.10)
+        assert factor_weights["local_trend"] == pytest.approx(0.15)
 
     @pytest.mark.asyncio
     async def test_same_data_different_modes_produce_different_scores(self, db_path):

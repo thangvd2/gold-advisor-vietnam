@@ -1,0 +1,961 @@
+{% extends "base.html" %}
+
+{% block title %}Gold Signal Report{% endblock %}
+
+{% block content %}
+<style>body.show-vn [data-lang="vn"].block{display:block!important}body.show-vn [data-lang="vn"].inline{display:inline!important}body.show-vn [data-lang="vn"].flex{display:flex!important}</style>
+
+{% set rec = signal.recommendation %}
+{% set conf = signal.confidence %}
+{% set mode_val = mode|lower %}
+
+{# Factor name mappings #}
+{% set factor_names = {
+    'gap': {'en': 'Gap', 'vn': 'Chênh lệch giá'},
+    'spread': {'en': 'Dealer Spread', 'vn': 'Chênh lệch đại lý'},
+    'trend': {'en': 'Gap Trend', 'vn': 'Xu hướng chênh lệch'},
+    'fx_trend': {'en': 'USD/VND Rate', 'vn': 'Tỷ giá USD/VND'},
+    'gold_trend': {'en': 'Gold Trend', 'vn': 'Xu hướng vàng'},
+    'local_spread': {'en': 'Store Spread', 'vn': 'Chênh lệch tiệm vàng'},
+    'local_trend': {'en': 'Store Price Trend', 'vn': 'Xu hướng giá tiệm'}
+} %}
+
+{# Compute gap trend from historical_gaps #}
+{% set valid_gaps = historical_gaps | selectattr('gap_pct', 'ne', none) | list %}
+{% set recent_gaps = valid_gaps[-7:] | list %}
+{% set older_gaps = valid_gaps[:7] | list %}
+{% set recent_avg = recent_gaps | map(attribute='gap_pct') | sum / recent_gaps | length if recent_gaps else none %}
+{% set older_avg = older_gaps | map(attribute='gap_pct') | sum / older_gaps | length if older_gaps else none %}
+{% set gap_trend_direction = 'stable' %}
+{% if recent_avg and older_avg %}
+    {% if recent_avg > older_avg + 0.5 %}
+        {% set gap_trend_direction = 'widening' %}
+    {% elif recent_avg < older_avg - 0.5 %}
+        {% set gap_trend_direction = 'narrowing' %}
+    {% endif %}
+{% endif %}
+
+{# Get latest MA values from historical_gaps #}
+{% set latest_ma_7d = none %}
+{% set latest_ma_30d = none %}
+{% for hg in historical_gaps[::-1] %}
+    {% if latest_ma_7d is none and hg.ma_7d is not none %}
+        {% set latest_ma_7d = hg.ma_7d %}
+    {% endif %}
+    {% if latest_ma_30d is none and hg.ma_30d is not none %}
+        {% set latest_ma_30d = hg.ma_30d %}
+    {% endif %}
+{% endfor %}
+
+<div class="max-w-5xl mx-auto">
+    {# Header Bar #}
+    <div class="mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+            <div class="flex items-center gap-4">
+                <a href="/" class="inline-flex items-center gap-1.5 text-sm text-charcoal-300 hover:text-gold-400 transition-colors">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    <span data-lang="en">Dashboard</span><span data-lang="vn">Bảng điều khiển</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="font-display text-3xl sm:text-4xl text-gold-400 tracking-wide mb-1">
+                    <span data-lang="en">Gold Signal Report</span><span data-lang="vn">Báo cáo tín hiệu vàng</span>
+                </h1>
+                <p class="text-sm text-charcoal-300">
+                    <span data-lang="en">Detailed analysis of market signals</span><span data-lang="vn">Phân tích chi tiết tín hiệu thị trường</span>
+                </p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                {# Mode Toggle #}
+                <div class="flex items-center gap-1 bg-charcoal-800/80 rounded-xl p-1">
+                    <a href="?mode=saver" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200
+                        {% if mode_val == 'saver' %}bg-gold-500 text-charcoal-900{% else %}text-charcoal-400 hover:text-charcoal-200{% endif %}">
+                        Saver
+                    </a>
+                    <a href="?mode=trader" class="px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200
+                        {% if mode_val == 'trader' %}bg-gold-500 text-charcoal-900{% else %}text-charcoal-400 hover:text-charcoal-200{% endif %}">
+                        Trader
+                    </a>
+                </div>
+                
+                {# Language Toggle #}
+                <div class="flex items-center gap-1 bg-charcoal-800/80 rounded-xl p-1">
+                    <button onclick="setLang('en')" class="lang-btn px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 text-charcoal-400 hover:text-charcoal-200">
+                        EN
+                    </button>
+                    <button onclick="setLang('vn')" class="lang-btn px-4 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 text-charcoal-400 hover:text-charcoal-200">
+                        VN
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 2. Overview Card #}
+    <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden mb-8">
+        <div class="p-6 sm:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+                <div class="flex-1">
+                    <div class="flex items-center gap-4 mb-4">
+                        {% if rec == "BUY" %}
+                            <span class="inline-flex items-center px-6 py-3 rounded-full text-lg font-bold tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+                                <span data-lang="en">BUY</span><span data-lang="vn">MUA</span>
+                            </span>
+                        {% elif rec == "SELL" %}
+                            <span class="inline-flex items-center px-6 py-3 rounded-full text-lg font-bold tracking-wider bg-red-500/20 text-red-400 border border-red-500/30">
+                                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                <span data-lang="en">SELL</span><span data-lang="vn">BÁN</span>
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-6 py-3 rounded-full text-lg font-bold tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                <svg class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/></svg>
+                                <span data-lang="en">HOLD</span><span data-lang="vn">GIỮ</span>
+                            </span>
+                        {% endif %}
+                        
+                        <span class="px-3 py-1 text-xs font-medium uppercase tracking-wider rounded-full bg-charcoal-800/80 text-charcoal-300 border border-charcoal-600/50">
+                            {{ mode_val | upper }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs uppercase tracking-wider text-charcoal-200 font-medium">
+                                <span data-lang="en">Confidence</span><span data-lang="vn">Độ tin cậy</span>
+                            </span>
+                            <span class="text-lg font-bold text-gold-400">{{ conf }}%</span>
+                        </div>
+                        <div class="w-full h-3 bg-charcoal-800 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500 ease-out
+                                {% if conf >= 70 %}bg-emerald-500{% elif conf >= 40 %}bg-amber-500{% else %}bg-red-500{% endif %}"
+                                style="width: {{ conf }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <p class="text-xs text-charcoal-400">
+                        <span data-lang="en">Generated</span><span data-lang="vn">Được tạo lúc</span>
+                        <span class="text-charcoal-300">{{ signal.timestamp | vn_time if signal.timestamp else "—" }}</span>
+                    </p>
+                </div>
+                
+                <div class="sm:min-w-[240px] p-4 bg-charcoal-800/50 rounded-xl border border-charcoal-600/30">
+                    <p class="text-xs uppercase tracking-wider text-charcoal-300 mb-3 font-medium">
+                        <span data-lang="en">Gap Summary</span><span data-lang="vn">Tóm tắt chênh lệch</span>
+                    </p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-charcoal-200" data-lang="en">Gap %</span>
+                            <span class="text-sm text-charcoal-200" data-lang="vn">Chênh lệch %</span>
+                            <span class="text-lg font-bold text-gold-400">
+                                {{ "%.2f"|format(signal.gap_pct) if signal.gap_pct is not none else "—" }}%
+                            </span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-charcoal-200" data-lang="en">Gap VND</span>
+                            <span class="text-sm text-charcoal-200" data-lang="vn">Chênh lệch VND</span>
+                            <span class="text-base font-semibold text-gold-300">
+                                {{ "{:,}".format(signal.gap_vnd | int) if signal.gap_vnd is not none else "—" }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# 3. Factor Breakdown Section #}
+    <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden mb-8">
+        <div class="p-6 sm:p-8">
+            <h2 class="font-display text-xl text-gold-400 mb-6">
+                <span data-lang="en">Signal Factors</span><span data-lang="vn">Các yếu tố tín hiệu</span>
+            </h2>
+            
+            <div class="space-y-3">
+                <div class="grid grid-cols-12 gap-2 text-xs uppercase tracking-wider text-charcoal-300 font-medium px-2 py-2 border-b border-charcoal-600/30">
+                    <div class="col-span-3"><span data-lang="en">Factor</span><span data-lang="vn">Yếu tố</span></div>
+                    <div class="col-span-2 text-center"><span data-lang="en">Direction</span><span data-lang="vn">Hướng</span></div>
+                    <div class="col-span-3"><span data-lang="en">Weight</span><span data-lang="vn">Trọng số</span></div>
+                    <div class="col-span-2"><span data-lang="en">Confidence</span><span data-lang="vn">Độ tin cậy</span></div>
+                    <div class="col-span-2 text-right"><span data-lang="en">Impact</span><span data-lang="vn">Tác động</span></div>
+                </div>
+                
+                {% for factor in signal.factors %}
+                {% set fname = factor_names.get(factor.name, {'en': factor.name, 'vn': factor.name}) %}
+                {% set impact = factor.direction * factor.weight %}
+                <div class="grid grid-cols-12 gap-2 items-center px-2 py-3 rounded-lg bg-charcoal-800/30 hover:bg-charcoal-800/50 transition-colors">
+                    <div class="col-span-3 text-sm text-charcoal-100 font-medium">
+                        <span data-lang="en">{{ fname.en }}</span><span data-lang="vn">{{ fname.vn }}</span>
+                    </div>
+                    <div class="col-span-2 text-center">
+                        {% if factor.direction > 0.1 %}
+                            <span class="inline-flex items-center text-emerald-400 font-bold">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+                                +{{ "%.1f"|format(factor.direction) }}
+                            </span>
+                        {% elif factor.direction < -0.1 %}
+                            <span class="inline-flex items-center text-red-400 font-bold">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                {{ "%.1f"|format(factor.direction) }}
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center text-charcoal-400 font-medium">
+                                <span class="w-2 h-2 rounded-full bg-charcoal-400 mr-1"></span>
+                                {{ "%.1f"|format(factor.direction) }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="col-span-3">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-charcoal-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-gold-500 rounded-full" style="width: {{ (factor.weight * 100) | int }}%"></div>
+                            </div>
+                            <span class="text-xs text-charcoal-300 w-10 text-right">{{ "%.0f"|format(factor.weight * 100) }}%</span>
+                        </div>
+                    </div>
+                    <div class="col-span-2">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1 h-2 bg-charcoal-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-charcoal-400 rounded-full" style="width: {{ (factor.confidence * 100) | int }}%"></div>
+                            </div>
+                            <span class="text-xs text-charcoal-300 w-10 text-right">{{ "%.0f"|format(factor.confidence * 100) }}%</span>
+                        </div>
+                    </div>
+                    <div class="col-span-2 text-right">
+                        <span class="font-bold text-sm
+                            {% if impact > 0.05 %}text-emerald-400{% elif impact < -0.05 %}text-red-400{% else %}text-charcoal-300{% endif %}">
+                            {{ "%+.2f"|format(impact) }}
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {# 4. Detailed Analysis Sections #}
+    <div class="space-y-6 mb-8">
+        
+        {# 4a. Gap Analysis #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-gold-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">Domestic-International Gap</span><span data-lang="vn">Chênh lệch giá nội địa - quốc tế</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">SJC vs international gold price difference</span><span data-lang="vn">Sự khác biệt giá SJC và vàng quốc tế</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Gap %</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Chênh lệch %</p>
+                        <p class="text-xl font-bold text-gold-400">
+                            {{ "%.2f"|format(current_gap.gap_pct) if current_gap and current_gap.gap_pct is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Gap VND</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Chênh lệch VND</p>
+                        <p class="text-lg font-semibold text-gold-300">
+                            {{ "{:,}".format(current_gap.gap_vnd | int) if current_gap and current_gap.gap_vnd is not none else "—" }}
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Avg SJC Sell</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Giá bán SJC TB</p>
+                        <p class="text-lg font-semibold text-charcoal-100">
+                            {{ "{:,}".format(current_gap.avg_sjc_sell | int) if current_gap and current_gap.avg_sjc_sell is not none else "—" }}
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Intl Price VND</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Giá quốc tế VND</p>
+                        <p class="text-lg font-semibold text-charcoal-100">
+                            {{ "{:,}".format(current_gap.intl_price_vnd | int) if current_gap and current_gap.intl_price_vnd is not none else "—" }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/30 rounded-xl border border-charcoal-600/20">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">7-Day Moving Avg</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">TB động 7 ngày</p>
+                        <p class="text-base font-semibold text-charcoal-200">
+                            {{ "%.2f"|format(latest_ma_7d) if latest_ma_7d is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/30 rounded-xl border border-charcoal-600/20">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">30-Day Moving Avg</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">TB động 30 ngày</p>
+                        <p class="text-base font-semibold text-charcoal-200">
+                            {{ "%.2f"|format(latest_ma_30d) if latest_ma_30d is not none else "—" }}%
+                        </p>
+                    </div>
+                </div>
+                
+                {% if report %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.gap_analysis.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.gap_analysis.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>The gap represents the premium Vietnamese buyers pay over international gold prices. A wider gap means domestic gold is relatively expensive (sell signal), while a narrower gap means domestic gold is cheaper relative to global prices (buy signal). The current gap is compared against 7-day and 30-day moving averages to determine if it's above or below normal.</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Chênh lệch cho thấy phần bù giá người mua Việt Nam trả cao hơn so với giá vàng quốc tế. Chênh lệch rộng nghĩa là vàng nội địa tương đối đắt (tín hiệu bán), trong khi chênh lệch hẹp nghĩa là vàng nội địa rẻ hơn so với giá toàn cầu (tín hiệu mua). Chênh lệch hiện tại được so sánh với trung bình 7 ngày và 30 ngày để xác định cao hay thấp hơn bình thường.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# 4b. FX Rate Analysis #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">USD/VND Exchange Rate</span><span data-lang="vn">Tỷ giá USD/VND</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">Vietnamese dong vs US dollar</span><span data-lang="vn">Đồng Việt Nam và đô la Mỹ</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Current Rate</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Tỷ giá hiện tại</p>
+                        <p class="text-xl font-bold text-charcoal-100">
+                            {{ "{:,}".format(fx_data.current_rate | int) if fx_data and fx_data.current_rate is not none else "—" }}
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Trend</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Xu hướng</p>
+                        {% if fx_data and fx_data.trend == 'up' %}
+                            <p class="text-lg font-semibold text-emerald-400 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+                                <span data-lang="en">Up</span><span data-lang="vn">Tăng</span>
+                            </p>
+                        {% elif fx_data and fx_data.trend == 'down' %}
+                            <p class="text-lg font-semibold text-red-400 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                <span data-lang="en">Down</span><span data-lang="vn">Giảm</span>
+                            </p>
+                        {% else %}
+                            <p class="text-lg font-semibold text-charcoal-300">
+                                <span data-lang="en">Stable</span><span data-lang="vn">Ổn định</span>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Change %</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Thay đổi %</p>
+                        <p class="text-xl font-bold {{ 'text-emerald-400' if fx_data and fx_data.change_pct and fx_data.change_pct > 0 else 'text-red-400' if fx_data and fx_data.change_pct and fx_data.change_pct < 0 else 'text-charcoal-200' }}">
+                            {{ "%+.2f"|format(fx_data.change_pct) if fx_data and fx_data.change_pct is not none else "—" }}%
+                        </p>
+                    </div>
+                </div>
+                
+                {% if report %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.fx_analysis.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.fx_analysis.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>The USD/VND exchange rate affects gold prices because gold is priced in USD globally. When the Vietnamese dong weakens against the dollar, imported gold becomes more expensive in VND, which tends to widen the domestic-international gap. This factor tracks the FX rate's movement against its moving average.</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Tỷ giá USD/VND ảnh hưởng đến giá vàng vì vàng được định giá bằng USD trên toàn cầu. Khi đồng VNĐ suy yếu so với đô la, vàng nhập khẩu trở nên đắt hơn tính bằng VNĐ, làm chênh lệch nội địa - quốc tế có xu hướng mở rộng. Yếu tố này theo dõi biến động tỷ giá so với trung bình động.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# 4c. Gold Price Analysis #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-gold-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-gold-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2L12.09 6.26L17 6.27L13.55 9.97L14.18 15.02L10 12.77L5.82 15.02L6.45 9.97L3 6.27L7.91 6.26L10 2Z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">International Gold Price (XAU/USD)</span><span data-lang="vn">Giá vàng quốc tế (XAU/USD)</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">Global spot gold price</span><span data-lang="vn">Giá vàng giao ngay toàn cầu</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Current Price</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Giá hiện tại</p>
+                        <p class="text-xl font-bold text-gold-400">
+                            ${{ "{:,.2f}".format(gold_data.current_price) if gold_data and gold_data.current_price is not none else "—" }}
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Trend</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Xu hướng</p>
+                        {% if gold_data and gold_data.trend == 'up' %}
+                            <p class="text-lg font-semibold text-emerald-400 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+                                <span data-lang="en">Up</span><span data-lang="vn">Tăng</span>
+                            </p>
+                        {% elif gold_data and gold_data.trend == 'down' %}
+                            <p class="text-lg font-semibold text-red-400 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                <span data-lang="en">Down</span><span data-lang="vn">Giảm</span>
+                            </p>
+                        {% else %}
+                            <p class="text-lg font-semibold text-charcoal-300">
+                                <span data-lang="en">Stable</span><span data-lang="vn">Ổn định</span>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Momentum</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Đà</p>
+                        <p class="text-xl font-bold {{ 'text-emerald-400' if gold_data and gold_data.momentum and gold_data.momentum > 0 else 'text-red-400' if gold_data and gold_data.momentum and gold_data.momentum < 0 else 'text-charcoal-200' }}">
+                            {{ "%+.2f"|format(gold_data.momentum) if gold_data and gold_data.momentum is not none else "—" }}
+                        </p>
+                    </div>
+                </div>
+                
+                {% if report %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.gold_analysis.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.gold_analysis.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>Global gold price trends affect the domestic market. When international gold rises but domestic prices lag, the gap widens (buy signal - domestic gold is undervalued). When international gold falls but domestic prices are sticky, the gap narrows (sell signal - domestic premium is shrinking).</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Xu hướng giá vàng thế giới ảnh hưởng đến thị trường nội địa. Khi vàng quốc tế tăng nhưng giá nội địa chậm theo, chênh lệch mở rộng (tín hiệu mua — vàng nội địa bị định giá thấp). Khi vàng quốc tế giảm nhưng giá nội địa giảm chậm, chênh lệch thu hẹp (tín hiệu bán — phần bù nội địa đang thu nhỏ).</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# 4d. Dealer Spread Analysis #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">Dealer Buy-Sell Spread</span><span data-lang="vn">Chênh lệch mua-bán đại lý</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">Difference between dealer buy and sell prices</span><span data-lang="vn">Khác biệt giá mua và bán đại lý</span>
+                        </p>
+                    </div>
+                </div>
+                
+                {% set spread_avg = dealer_spreads | sum / dealer_spreads | length if dealer_spreads else none %}
+                {% set spread_min = dealer_spreads | min if dealer_spreads else none %}
+                {% set spread_max = dealer_spreads | max if dealer_spreads else none %}
+                
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Average Spread</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Chênh lệch TB</p>
+                        <p class="text-xl font-bold text-gold-400">
+                            {{ "%.2f"|format(spread_avg) if spread_avg is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Minimum</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Thấp nhất</p>
+                        <p class="text-xl font-bold text-emerald-400">
+                            {{ "%.2f"|format(spread_min) if spread_min is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Maximum</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Cao nhất</p>
+                        <p class="text-xl font-bold text-red-400">
+                            {{ "%.2f"|format(spread_max) if spread_max is not none else "—" }}%
+                        </p>
+                    </div>
+                </div>
+                
+                {% if report %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.dealer_spread_analysis.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.dealer_spread_analysis.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>The dealer spread (difference between buy and sell prices) reflects market liquidity and transaction costs. Tighter spreads indicate active trading and lower costs. Wider spreads suggest uncertainty or lower liquidity. For short-term trading, tight spreads are favorable.</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Chênh lệch mua-bán đại lý (khoảng cách giữa giá mua và giá bán) phản ánh thanh khoản thị trường và chi phí giao dịch. Chênh lệch hẹp cho thấy giao dịch sôi động và chi phí thấp. Chênh lệch rộng cho thấy sự không chắc chắn hoặc thanh khoản thấp. Đối với giao dịch ngắn hạn, chênh lệch hẹp là thuận lợi.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# 4e. Local Store Analysis #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">Local Gold Store - Your Store</span><span data-lang="vn">Tiệm vàng gần nhà - Cửa hàng của bạn</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">Prices at your local gold ring dealer</span><span data-lang="vn">Giá tại tiệm vàng nhẫn trơn gần nhà bạn</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Buy Price</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Giá mua</p>
+                        <p class="text-lg font-semibold text-emerald-400">
+                            {{ "{:,}".format(local_data.latest_buy | int) if local_data and local_data.latest_buy is not none else "—" }}
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Sell Price</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Giá bán</p>
+                        <p class="text-lg font-semibold text-red-400">
+                            {{ "{:,}".format(local_data.latest_sell | int) if local_data and local_data.latest_sell is not none else "—" }}
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Spread %</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Chênh lệch %</p>
+                        <p class="text-lg font-semibold text-gold-400">
+                            {{ "%.2f"|format(local_data.spread_pct) if local_data and local_data.spread_pct is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">7-Day Trend</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Xu hướng 7 ngày</p>
+                        <p class="text-lg font-semibold {{ 'text-emerald-400' if local_data and local_data.trend_7d and local_data.trend_7d > 0 else 'text-red-400' if local_data and local_data.trend_7d and local_data.trend_7d < 0 else 'text-charcoal-200' }}">
+                            {{ "%+.2f"|format(local_data.trend_7d) if local_data and local_data.trend_7d is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">30-Day Trend</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Xu hướng 30 ngày</p>
+                        <p class="text-lg font-semibold {{ 'text-emerald-400' if local_data and local_data.trend_30d and local_data.trend_30d > 0 else 'text-red-400' if local_data and local_data.trend_30d and local_data.trend_30d < 0 else 'text-charcoal-200' }}">
+                            {{ "%+.2f"|format(local_data.trend_30d) if local_data and local_data.trend_30d is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Data Points</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Số điểm dữ liệu</p>
+                        <p class="text-lg font-semibold text-charcoal-200">
+                            {{ local_data.data_points if local_data and local_data.data_points else "—" }}
+                        </p>
+                    </div>
+                </div>
+                
+                {% if report %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.local_store_analysis.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.local_store_analysis.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>This section tracks the buy and sell prices at your local gold store where you actually trade. The spread at your store determines your real transaction cost. Price trends at your store are the most relevant timing signal since this is where you buy and sell ring gold.</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Phần này theo dõi giá mua và giá bán tại tiệm vàng gần nhà — nơi bạn thực tế giao dịch. Chênh lệch tại tiệm của bạn quyết định chi phí giao dịch thực tế. Xu hướng giá tại tiệm của bạn là tín hiệu thời điểm quan trọng nhất vì đây là nơi bạn mua bán vàng nhẫn trơn.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# 4f. Gap Trend Analysis #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">Gap Trend</span><span data-lang="vn">Xu hướng chênh lệch</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">Direction of domestic-international price gap</span><span data-lang="vn">Hướng chênh lệch giá nội địa - quốc tế</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl col-span-3 sm:col-span-1">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Direction</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Hướng</p>
+                        {% if gap_trend_direction == 'widening' %}
+                            <p class="text-lg font-semibold text-red-400 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                                <span data-lang="en">Widening</span><span data-lang="vn">Mở rộng</span>
+                            </p>
+                        {% elif gap_trend_direction == 'narrowing' %}
+                            <p class="text-lg font-semibold text-emerald-400 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
+                                <span data-lang="en">Narrowing</span><span data-lang="vn">Thu hẹp</span>
+                            </p>
+                        {% else %}
+                            <p class="text-lg font-semibold text-charcoal-300">
+                                <span data-lang="en">Stable</span><span data-lang="vn">Ổn định</span>
+                            </p>
+                        {% endif %}
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Recent Avg (7d)</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">TB gần đây (7d)</p>
+                        <p class="text-lg font-semibold text-charcoal-200">
+                            {{ "%.2f"|format(recent_avg) if recent_avg is not none else "—" }}%
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Older Avg (first 7)</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">TB cũ (7d đầu)</p>
+                        <p class="text-lg font-semibold text-charcoal-200">
+                            {{ "%.2f"|format(older_avg) if older_avg is not none else "—" }}%
+                        </p>
+                    </div>
+                </div>
+                
+                {% if report %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.gap_trend_analysis.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.gap_trend_analysis.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>The gap trend shows whether the domestic-international price difference is widening or narrowing over time. A widening trend suggests increasing domestic demand or supply constraints. A narrowing trend may indicate normalization or reduced demand pressure.</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Xu hướng chênh lệch cho thấy mức chênh lệch giá nội địa - quốc tế đang mở rộng hay thu hẹp theo thời gian. Xu hướng mở rộng cho thấy nhu cầu nội địa tăng hoặc nguồn cung hạn chế. Xu hướng thu hẹp có thể cho thấy bình thường hóa hoặc giảm áp lực nhu cầu.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# 4g. Seasonal Context #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">Seasonal Demand</span><span data-lang="vn">Nhu cầu theo mùa</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">Historical demand patterns</span><span data-lang="vn">Mẫu nhu cầu lịch sử</span>
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Current Month</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Tháng hiện tại</p>
+                        <p class="text-lg font-semibold text-gold-400">
+                            {{ seasonal_info.month_name if seasonal_info and seasonal_info.month_name else "—" }}
+                        </p>
+                    </div>
+                    <div class="p-3 bg-charcoal-800/50 rounded-xl">
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="en">Demand Level</p>
+                        <p class="text-xs text-charcoal-400 mb-1" data-lang="vn">Mức nhu cầu</p>
+                        {% set demand = seasonal_info.demand_level if seasonal_info else 'unknown' %}
+                        {% if demand in ('very_high', 'high') %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                {% if demand == 'very_high' %}
+                                    <span data-lang="en">Very High</span><span data-lang="vn">Rất cao</span>
+                                {% else %}
+                                    <span data-lang="en">High</span><span data-lang="vn">Cao</span>
+                                {% endif %}
+                            </span>
+                        {% elif demand == 'medium' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-charcoal-600/40 text-charcoal-200 border border-charcoal-500/30">
+                                <span data-lang="en">Medium</span><span data-lang="vn">Trung bình</span>
+                            </span>
+                        {% elif demand == 'low' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                                <span data-lang="en">Low</span><span data-lang="vn">Thap</span>
+                            </span>
+                        {% else %}
+                            <span class="text-charcoal-300">—</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if report %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.seasonal_context.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.seasonal_context.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>Gold demand in Vietnam follows seasonal patterns. Demand peaks during Tet (January-February) and the wedding season (November-December). High demand periods typically see wider gaps as buyers compete for limited supply.</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Nhu cầu vàng tại Việt Nam theo mô hình theo mùa. Nhu cầu đạt đỉnh vào dịp Tết (tháng 1-2) và mùa cưới (tháng 11-12). Những giai đoạn nhu cầu cao thường thấy chênh lệch rộng khi người mua cạnh tranh cho nguồn cung hạn chế.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {# 4h. Policy Alerts #}
+        <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+            <div class="p-6 sm:p-8">
+                <div class="flex items-start gap-4 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="font-display text-lg text-gold-400 mb-1">
+                            <span data-lang="en">State Bank Policy</span><span data-lang="vn">Chính sách Ngân hàng Nhà nước</span>
+                        </h3>
+                        <p class="text-xs text-charcoal-400">
+                            <span data-lang="en">Regulatory environment and interventions</span><span data-lang="vn">Môi trường quy định và can thiệp</span>
+                        </p>
+                    </div>
+                </div>
+                
+                {% if policy_info and policy_info.has_override %}
+                <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl mb-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-5 h-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span class="text-sm font-semibold text-red-400">
+                            <span data-lang="en">Policy Override Active</span><span data-lang="vn">Đang có chính sách đặc biệt</span>
+                        </span>
+                    </div>
+                    {% if policy_info.summary %}
+                    <p class="text-sm text-charcoal-200">{{ policy_info.summary }}</p>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl mb-6">
+                    <div class="flex items-center gap-2">
+                        <svg class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="text-sm text-emerald-300">
+                            <span data-lang="en">No active policy overrides detected</span><span data-lang="vn">Không phát hiện chính sách đặc biệt</span>
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if report and report.policy_context %}
+                <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.policy_context.en | e }}</p></div>
+                <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.policy_context.vn | e }}</p></div>
+                {% else %}
+                <div class="text-sm text-charcoal-200 leading-relaxed">
+                    <div data-lang="en" class="block">
+                        <p>State Bank of Vietnam policy decisions (gold import quotas, SJC trading rules, market interventions) can override all other signals. When a policy event is active, treat the recommendation with extra caution.</p>
+                    </div>
+                    <div data-lang="vn" class="block">
+                        <p>Quyết định chính sách của Ngân hàng Nhà nước Việt Nam (hạn ngạch nhập vàng, quy định giao dịch SJC, can thiệp thị trường) có thể ưu tiên hơn tất cả tín hiệu khác. Khi có sự kiện chính sách, cần đặc biệt thận trọng với khuyến nghị.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {# 5. Conclusion Section #}
+    <div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden mb-8">
+        <div class="p-6 sm:p-8">
+            <h2 class="font-display text-xl text-gold-400 mb-6">
+                <span data-lang="en">Final Recommendation</span><span data-lang="vn">Khuyến nghị cuối cùng</span>
+            </h2>
+            
+            <div class="flex flex-col sm:flex-row sm:items-center gap-6 mb-6">
+                {% if rec == "BUY" %}
+                    <span class="inline-flex items-center px-8 py-4 rounded-2xl text-2xl font-bold tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <svg class="w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+                        <span data-lang="en">BUY</span><span data-lang="vn">MUA</span>
+                    </span>
+                {% elif rec == "SELL" %}
+                    <span class="inline-flex items-center px-8 py-4 rounded-2xl text-2xl font-bold tracking-wider bg-red-500/20 text-red-400 border border-red-500/30">
+                        <svg class="w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        <span data-lang="en">SELL</span><span data-lang="vn">BÁN</span>
+                    </span>
+                {% else %}
+                    <span class="inline-flex items-center px-8 py-4 rounded-2xl text-2xl font-bold tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <svg class="w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14"/></svg>
+                        <span data-lang="en">HOLD</span><span data-lang="vn">GIỮ</span>
+                    </span>
+                {% endif %}
+                
+                <div class="flex-1">
+                    <p class="text-xs uppercase tracking-wider text-charcoal-300 mb-1">
+                        <span data-lang="en">Confidence Level</span><span data-lang="vn">Mức độ tin cậy</span>
+                    </p>
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 h-3 bg-charcoal-800 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full transition-all duration-500 ease-out
+                                {% if conf >= 70 %}bg-emerald-500{% elif conf >= 40 %}bg-amber-500{% else %}bg-red-500{% endif %}"
+                                style="width: {{ conf }}%"></div>
+                        </div>
+                        <span class="text-2xl font-bold text-gold-400">{{ conf }}%</span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if report and report.conclusion %}
+            <div data-lang="en" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.conclusion.en | e }}</p></div>
+            <div data-lang="vn" class="block text-sm text-charcoal-200 leading-relaxed"><p>{{ report.conclusion.vn | e }}</p></div>
+            {% else %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {# Supporting Factors #}
+                <div class="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+                    <h4 class="text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+                        <span data-lang="en">Supporting Factors</span><span data-lang="vn">Yếu tố hỗ trợ</span>
+                    </h4>
+                    <ul class="space-y-2">
+                        {% for factor in signal.factors %}
+                            {% if factor.direction > 0 and factor.confidence > 0.3 %}
+                                {% set fname = factor_names.get(factor.name, {'en': factor.name, 'vn': factor.name}) %}
+                                <li class="flex items-center gap-2 text-sm text-charcoal-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                    <span data-lang="en">{{ fname.en }}</span><span data-lang="vn">{{ fname.vn }}</span>
+                                    <span class="text-emerald-400 font-semibold">+{{ "%.0f"|format(factor.direction * factor.weight * 100) }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="text-sm text-charcoal-400">
+                                <span data-lang="en">None</span><span data-lang="vn">Không có</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                {# Opposing Factors #}
+                <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                    <h4 class="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        <span data-lang="en">Opposing Factors</span><span data-lang="vn">Yếu tố phản đối</span>
+                    </h4>
+                    <ul class="space-y-2">
+                        {% for factor in signal.factors %}
+                            {% if factor.direction < 0 and factor.confidence > 0.3 %}
+                                {% set fname = factor_names.get(factor.name, {'en': factor.name, 'vn': factor.name}) %}
+                                <li class="flex items-center gap-2 text-sm text-charcoal-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-400"></span>
+                                    <span data-lang="en">{{ fname.en }}</span><span data-lang="vn">{{ fname.vn }}</span>
+                                    <span class="text-red-400 font-semibold">{{ "%.0f"|format(factor.direction * factor.weight * 100) }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="text-sm text-charcoal-400">
+                                <span data-lang="en">None</span><span data-lang="vn">Không có</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {# 6. Footer #}
+    <div class="border-t border-gold-500/20 pt-6 pb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <p class="text-xs text-charcoal-400 max-w-xl">
+                <span data-lang="en">This is advisory only, not financial advice. Always do your own research.</span>
+                <span data-lang="vn">Chỉ mang tính chất tham khảo, không phải tư vấn tài chính. Hãy luôn tự nghiên cứu trước khi quyết định.</span>
+            </p>
+            <a href="/" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg
+                    bg-charcoal-800/80 text-charcoal-300 hover:text-gold-400 hover:bg-charcoal-800
+                    border border-charcoal-600/50 hover:border-gold-500/30 transition-all duration-200">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                <span data-lang="en">Back to Dashboard</span><span data-lang="vn">Về Bảng điều khiển</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setLang(lang) {
+    document.body.classList.toggle('show-vn', lang === 'vn');
+    
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+        btn.classList.remove('bg-gold-500', 'text-charcoal-900');
+        btn.classList.add('text-charcoal-400', 'hover:text-charcoal-200');
+    });
+    
+    var activeBtn = document.querySelector('.lang-btn:nth-child(' + (lang === 'en' ? '1' : '2') + ')');
+    if (activeBtn) {
+        activeBtn.classList.remove('text-charcoal-400', 'hover:text-charcoal-200');
+        activeBtn.classList.add('bg-gold-500', 'text-charcoal-900');
+    }
+    
+    localStorage.setItem('gold-lang', lang);
+}
+
+(function() {
+    var saved = localStorage.getItem('gold-lang');
+    if (saved) {
+        setLang(saved);
+    } else {
+        setLang('en');
+    }
+})();
+</script>
+{% endblock %}

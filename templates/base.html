@@ -54,6 +54,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 </head>
 <body class="bg-charcoal-900 text-charcoal-100 font-body min-h-screen antialiased">
+<style>[data-lang="vn"]{display:none}body.show-vn [data-lang="en"]{display:none!important}body.show-vn [data-lang="vn"]{display:initial!important}</style>
 
     <header class="border-b border-gold-500/20 bg-charcoal-800/80 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,7 +68,12 @@
                     <h1 class="font-display text-xl text-gold-400 tracking-wide">Gold Advisor</h1>
                 </div>
                 <nav class="hidden sm:flex items-center gap-6 text-sm text-charcoal-300">
-                    <span class="text-gold-500 font-medium">Dashboard</span>
+                    <a href="/dashboard" class="hover:text-gold-400 transition-colors">Dashboard</a>
+                    <a href="/dashboard/report" class="hover:text-gold-400 transition-colors">Report</a>
+                    <div class="flex items-center gap-1 bg-charcoal-700/80 rounded-lg p-0.5">
+                        <button onclick="setLang('en')" class="lang-btn px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200 text-charcoal-400 hover:text-charcoal-200">EN</button>
+                        <button onclick="setLang('vn')" class="lang-btn px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200 text-charcoal-400 hover:text-charcoal-200">VN</button>
+                    </div>
                 </nav>
             </div>
         </div>
@@ -78,6 +84,11 @@
     </main>
 
     {% block scripts %}{% endblock %}
+
+    <script>
+    function setLang(l){document.body.classList.toggle('show-vn',l==='vn');try{localStorage.setItem('gold-lang',l)}catch(e){}}
+    (function(){try{var s=localStorage.getItem('gold-lang');if(s)setLang(s);else setLang('en')}catch(e){}})();
+    </script>
 
 </body>
 </html>

@@ -25,10 +25,10 @@ def compute_gap_signal(
     if reference_ma is None or reference_ma == 0:
         return SignalFactor(name="gap", direction=0.0, weight=weight, confidence=0.0)
 
-    deviation_pct = (gap_pct - reference_ma) / reference_ma
-    direction = max(-1.0, min(1.0, -deviation_pct * 5.0))
+    deviation_pp = gap_pct - reference_ma
+    direction = max(-1.0, min(1.0, -deviation_pp * 2.0))
 
-    abs_deviation = abs(deviation_pct)
+    abs_deviation = abs(deviation_pp)
     confidence = min(0.9, max(0.1, abs_deviation * 3.0))
     if ma_30d is None and ma_7d is not None:
         confidence *= 0.7

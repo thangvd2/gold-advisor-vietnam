@@ -81,22 +81,22 @@ async def get_dashboard_prices():
             }
 
         entry["products"].append(product)
-        if entry["fetched_at"] is None:
-            if p.fetched_at:
-                vn_dt = (
-                    p.fetched_at.astimezone(VNTZ)
-                    if p.fetched_at.tzinfo
-                    else p.fetched_at.replace(tzinfo=timezone.utc).astimezone(VNTZ)
-                )
-                entry["fetched_at"] = vn_dt.isoformat()
-            else:
-                entry["fetched_at"] = None
+        if p.fetched_at:
+            current = entry.get("_max_fetched_at")
+            if current is None or p.fetched_at > current:
+                entry["_max_fetched_at"] = p.fetched_at
 
-    dealers = list(grouped.values())
-    for d in dealers:
-        d["fetched_at"] = d["fetched_at"]
+    for entry in grouped.values():
+        raw = entry.pop("_max_fetched_at", None)
+        if raw:
+            vn_dt = (
+                raw.astimezone(VNTZ)
+                if raw.tzinfo
+                else raw.replace(tzinfo=timezone.utc).astimezone(VNTZ)
+            )
+            entry["fetched_at"] = vn_dt.isoformat()
 
-    return {"dealers": dealers}
+    return {"dealers": list(grouped.values())}
 
 
 @router.get("/signal")
@@ -177,6 +177,14 @@ async def get_signal_partial(
         except Exception:
             pass
 
+        from src.engine.llm_reasoning import generate_llm_report
+
+        report = None
+        try:
+            report = await generate_llm_report(signal)
+        except Exception:
+            pass
+
         return templates.TemplateResponse(
             request,
             "partials/signal_card.html",
@@ -185,6 +193,7 @@ async def get_signal_partial(
                 "gap": gap,
                 "seasonal_info": seasonal_info,
                 "policy_info": policy_info,
+                "report": report,
             },
         )
     except Exception:
@@ -230,23 +239,25 @@ async def get_prices_partial(request: Request):
                 }
 
             entry["products"].append(product)
-            if entry["fetched_at"] is None:
-                if p.fetched_at:
-                    vn_dt = (
-                        p.fetched_at.astimezone(VNTZ)
-                        if p.fetched_at.tzinfo
-                        else p.fetched_at.replace(tzinfo=timezone.utc).astimezone(VNTZ)
-                    )
-                    entry["fetched_at"] = vn_dt.isoformat()
-                else:
-                    entry["fetched_at"] = None
+            if p.fetched_at:
+                current = entry.get("_max_fetched_at")
+                if current is None or p.fetched_at > current:
+                    entry["_max_fetched_at"] = p.fetched_at
 
-        dealers = list(grouped.values())
+        for entry in grouped.values():
+            raw = entry.pop("_max_fetched_at", None)
+            if raw:
+                vn_dt = (
+                    raw.astimezone(VNTZ)
+                    if raw.tzinfo
+                    else raw.replace(tzinfo=timezone.utc).astimezone(VNTZ)
+                )
+                entry["fetched_at"] = vn_dt.isoformat()
 
         return templates.TemplateResponse(
             request,
             "partials/price_table.html",
-            context={"dealers": dealers},
+            context={"dealers": list(grouped.values())},
         )
     except Exception:
         return HTMLResponse(
@@ -373,7 +384,7 @@ async def get_macro_partial(request: Request):
 async def get_dashboard_news():
     try:
         async with async_session() as session:
-            news = await get_recent_news(session, limit=10)
+            news = await get_recent_news(session, limit=15)
 
         return [
             {
@@ -396,7 +407,7 @@ async def get_dashboard_news():
 async def get_news_partial(request: Request):
     try:
         async with async_session() as session:
-            news = await get_recent_news(session, limit=10)
+            news = await get_recent_news(session, limit=15)
 
         return templates.TemplateResponse(
             request,
@@ -409,3 +420,81 @@ async def get_news_partial(request: Request):
             "partials/news_card.html",
             context={"news_items": []},
         )
+
+
+@router.get("/report")
+async def get_report_page(
+    request: Request,
+    mode: str = Query("saver", pattern="^(saver|trader)$"),
+):
+    from src.analysis.gap import (
+        calculate_current_gap,
+        calculate_historical_gaps,
+        calculate_dealer_spreads,
+        get_local_ring_gold_data,
+    )
+    from src.analysis.macro import calculate_fx_trend, calculate_gold_trend
+    from src.engine.seasonal import get_seasonal_demand_level, get_month_name
+
+    signal_mode = SignalMode(mode.upper())
+    signal = await asyncio.to_thread(compute_signal, _get_db_path(), signal_mode)
+
+    db_path = _get_db_path()
+
+    current_gap = await asyncio.to_thread(calculate_current_gap, db_path)
+    historical_gaps = await asyncio.to_thread(calculate_historical_gaps, db_path, "1M")
+    dealer_spreads = await asyncio.to_thread(calculate_dealer_spreads, db_path)
+    local_data = await asyncio.to_thread(get_local_ring_gold_data, db_path)
+    fx_data = await asyncio.to_thread(calculate_fx_trend, db_path)
+    gold_data = await asyncio.to_thread(calculate_gold_trend, db_path)
+
+    month = datetime.now(timezone.utc).month
+    seasonal_info = {
+        "month": month,
+        "demand_level": get_seasonal_demand_level(month),
+        "month_name": get_month_name(month) if month else "",
+    }
+
+    policy_info = None
+    try:
+        from src.engine.policy import compute_policy_signal
+
+        policy_info = await asyncio.to_thread(compute_policy_signal, db_path)
+    except Exception:
+        pass
+
+    from src.engine.llm_reasoning import generate_llm_report
+
+    report = None
+    try:
+        report = await generate_llm_report(
+            signal,
+            current_gap=current_gap,
+            historical_gaps=historical_gaps or [],
+            dealer_spreads=dealer_spreads,
+            local_data=local_data,
+            fx_data=fx_data,
+            gold_data=gold_data,
+            seasonal_info=seasonal_info,
+            policy_info=policy_info,
+        )
+    except Exception:
+        pass
+
+    return templates.TemplateResponse(
+        request,
+        "report.html",
+        context={
+            "signal": signal,
+            "current_gap": current_gap,
+            "historical_gaps": historical_gaps or [],
+            "dealer_spreads": dealer_spreads,
+            "local_data": local_data,
+            "fx_data": fx_data,
+            "gold_data": gold_data,
+            "seasonal_info": seasonal_info,
+            "policy_info": policy_info,
+            "mode": mode,
+            "report": report,
+        },
+    )
