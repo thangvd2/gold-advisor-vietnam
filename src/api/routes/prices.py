@@ -34,10 +34,11 @@ async def get_price_history(
     product_type: str = Query(..., pattern="^(sjc_bar|ring_gold|xau_usd)$"),
     range: str = Query("1M", pattern="^(1D|1W|1M|3M|1Y)$"),
     source: str = Query(None, max_length=50),
+    source_exclude: str = Query(None, max_length=50),
 ):
     db_path = _get_db_path()
     prices = await asyncio.to_thread(
-        get_price_series, db_path, product_type, range, source
+        get_price_series, db_path, product_type, range, source, source_exclude
     )
     return {"product_type": product_type, "range": range, "prices": prices}
 

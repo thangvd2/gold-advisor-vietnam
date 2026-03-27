@@ -14,7 +14,11 @@ VALID_PRODUCT_TYPES = {"sjc_bar", "ring_gold", "xau_usd"}
 
 
 def get_price_series(
-    db_path: str, product_type: str, range: str = "1M", source: str | None = None
+    db_path: str,
+    product_type: str,
+    range: str = "1M",
+    source: str | None = None,
+    source_exclude: str | None = None,
 ) -> list[dict]:
     if range not in RANGE_MAP:
         raise ValueError(
@@ -35,6 +39,9 @@ def get_price_series(
     if source:
         source_filter = "AND source = ?"
         params.append(source)
+    elif source_exclude:
+        source_filter = "AND source != ?"
+        params.append(source_exclude)
 
     con = get_duckdb_connection(db_path)
     try:

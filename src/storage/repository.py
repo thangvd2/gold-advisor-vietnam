@@ -1,13 +1,20 @@
 """CRUD operations for price_history, data_quality_alerts, and signal_history tables."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.ingestion.models import FetchedPrice
-from src.storage.models import DataQualityAlert, NewsItem, PriceRecord, SignalRecord
+from src.storage.models import (
+    DataQualityAlert,
+    FedWatchSnapshot,
+    NewsItem,
+    PolymarketEvent,
+    PriceRecord,
+    SignalRecord,
+)
 
 
 async def save_price(
@@ -15,6 +22,7 @@ async def save_price(
     fetched: FetchedPrice,
     validation_status: str = "valid",
 ) -> PriceRecord:
+    now = datetime.now(timezone.utc)
     record = PriceRecord(
         source=fetched.source,
         product_type=fetched.product_type,
@@ -24,7 +32,7 @@ async def save_price(
         price_vnd=fetched.price_vnd,
         currency=fetched.currency,
         timestamp=fetched.timestamp,
-        fetched_at=fetched.fetched_at,
+        fetched_at=fetched.fetched_at or now,
         validation_status=validation_status,
     )
     if record.buy_price is not None and record.sell_price is not None:
@@ -39,23 +47,26 @@ async def get_latest_prices(
     source: str | None = None,
     product_type: str | None = None,
 ) -> list[PriceRecord]:
-    latest_subq = select(
+    latest_fq = select(
         PriceRecord.source,
         PriceRecord.product_type,
-        func.max(PriceRecord.timestamp).label("max_ts"),
+        func.max(PriceRecord.fetched_at).label("max_fa"),
     ).group_by(PriceRecord.source, PriceRecord.product_type)
     if source:
-        latest_subq = latest_subq.where(PriceRecord.source == source)
+        latest_fq = latest_fq.where(PriceRecord.source == source)
     if product_type:
-        latest_subq = latest_subq.where(PriceRecord.product_type == product_type)
+        latest_fq = latest_fq.where(PriceRecord.product_type == product_type)
+    latest_fq = latest_fq.subquery()
 
-    latest_subq = latest_subq.subquery()
-
-    stmt = select(PriceRecord).join(
-        latest_subq,
-        (PriceRecord.source == latest_subq.c.source)
-        & (PriceRecord.product_type == latest_subq.c.product_type)
-        & (PriceRecord.timestamp == latest_subq.c.max_ts),
+    stmt = (
+        select(PriceRecord)
+        .join(
+            latest_fq,
+            (PriceRecord.source == latest_fq.c.source)
+            & (PriceRecord.product_type == latest_fq.c.product_type)
+            & (PriceRecord.fetched_at == latest_fq.c.max_fa),
+        )
+        .order_by(PriceRecord.source, PriceRecord.product_type)
     )
     if source:
         stmt = stmt.where(PriceRecord.source == source)
@@ -64,6 +75,49 @@ async def get_latest_prices(
 
     result = await session.execute(stmt)
     return list(result.scalars().all())
+
+
+async def get_last_price_change_times(
+    session: AsyncSession,
+) -> dict[tuple[str, str], datetime]:
+    latest = (
+        select(
+            PriceRecord.source,
+            PriceRecord.product_type,
+            func.max(PriceRecord.fetched_at).label("max_fa"),
+        )
+        .group_by(PriceRecord.source, PriceRecord.product_type)
+        .subquery()
+    )
+    stmt = select(PriceRecord).join(
+        latest,
+        (PriceRecord.source == latest.c.source)
+        & (PriceRecord.product_type == latest.c.product_type)
+        & (PriceRecord.fetched_at == latest.c.max_fa),
+    )
+    result = await session.execute(stmt)
+    current_rows = list(result.scalars().all())
+
+    out: dict[tuple[str, str], datetime] = {}
+    for row in current_rows:
+        cur_sell = row.sell_price
+        if cur_sell is None:
+            continue
+        sub = (
+            select(PriceRecord.timestamp)
+            .where(
+                PriceRecord.source == row.source,
+                PriceRecord.product_type == row.product_type,
+                PriceRecord.sell_price == cur_sell,
+            )
+            .order_by(PriceRecord.timestamp.desc())
+            .limit(1)
+        )
+        r = await session.execute(sub)
+        changed_at = r.scalar()
+        if changed_at:
+            out[(row.source, row.product_type)] = changed_at
+    return out
 
 
 async def get_prices_since(
@@ -200,5 +254,81 @@ async def get_recent_news(
     if category:
         stmt = stmt.where(NewsItem.category == category)
     stmt = stmt.limit(limit)
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def save_fedwatch_snapshot(
+    session: AsyncSession, implied_rate: float, futures_price: float, contract: str
+) -> FedWatchSnapshot:
+    snapshot = FedWatchSnapshot(
+        implied_rate=implied_rate,
+        futures_price=futures_price,
+        contract_symbol=contract,
+    )
+    session.add(snapshot)
+    await session.flush()
+    return snapshot
+
+
+async def get_latest_fedwatch(session: AsyncSession) -> FedWatchSnapshot | None:
+    from sqlalchemy import desc
+
+    stmt = select(FedWatchSnapshot).order_by(desc(FedWatchSnapshot.id)).limit(1)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+async def save_polymarket_events(session: AsyncSession, events: list[dict]) -> int:
+    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+    saved = 0
+    for e in events:
+        stmt = (
+            sqlite_insert(PolymarketEvent)
+            .values(
+                slug=e["slug"],
+                title=e["title"],
+                question=e.get("question"),
+                outcome_prices=e.get("outcome_prices"),
+                volume_24h=e.get("volume_24h"),
+                liquidity=e.get("liquidity"),
+                one_day_price_change=e.get("one_day_price_change"),
+                one_hour_price_change=e.get("one_hour_price_change"),
+                category=e.get("category"),
+                is_flagged=e.get("is_flagged", False),
+            )
+            .on_conflict_do_update(
+                index_elements=["slug"],
+                set_={
+                    "title": e["title"],
+                    "question": e.get("question"),
+                    "outcome_prices": e.get("outcome_prices"),
+                    "volume_24h": e.get("volume_24h"),
+                    "liquidity": e.get("liquidity"),
+                    "one_day_price_change": e.get("one_day_price_change"),
+                    "one_hour_price_change": e.get("one_hour_price_change"),
+                    "category": e.get("category"),
+                    "is_flagged": e.get("is_flagged", False),
+                    "fetched_at": func.now(),
+                },
+            )
+        )
+        await session.execute(stmt)
+        saved += 1
+    await session.flush()
+    return saved
+
+
+async def get_polymarket_events(
+    session: AsyncSession, flagged_only: bool = False, limit: int = 20
+) -> list[PolymarketEvent]:
+    from sqlalchemy import desc
+
+    stmt = (
+        select(PolymarketEvent).order_by(desc(PolymarketEvent.fetched_at)).limit(limit)
+    )
+    if flagged_only:
+        stmt = stmt.where(PolymarketEvent.is_flagged == True)
     result = await session.execute(stmt)
     return list(result.scalars().all())

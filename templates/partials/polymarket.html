@@ -1,0 +1,94 @@
+{% if events %}
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+  <div class="p-4 sm:p-6 border-b border-gold-500/10">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        </svg>
+        <h2 class="text-sm font-semibold uppercase tracking-[0.15em] text-charcoal-200">Prediction Markets</h2>
+      </div>
+      <span class="text-xs text-charcoal-400">{{ fetched_at | vn_time if fetched_at else "—" }}</span>
+    </div>
+  </div>
+  
+  <div class="p-4 sm:p-6">
+    {% set flagged_events = events | selectattr('is_flagged', 'equalto', true) | list %}
+    {% set regular_events = events | selectattr('is_flagged', 'equalto', false) | list %}
+    
+    {% if flagged_events %}
+    <div class="mb-4">
+      <div class="flex items-center gap-1.5 mb-3">
+        <svg class="w-3.5 h-3.5 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/>
+        </svg>
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-amber-400">Flagged Moves</h3>
+      </div>
+      <div class="space-y-2">
+        {% for event in flagged_events[:5] %}
+        <div class="flex items-start justify-between gap-3 p-2 rounded-lg bg-charcoal-800/40 hover:bg-charcoal-800/60 transition-colors">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-charcoal-100 truncate">{{ event.title }}</p>
+            <p class="text-xs text-charcoal-400 mt-0.5">
+              {% if event.volume_24h %}Vol 24h: ${{ "{:,.0f}".format(event.volume_24h) }}{% else %}—{% endif %}
+            </p>
+          </div>
+          <div class="shrink-0">
+            {% if event.one_day_price_change is not none %}
+              {% set change = event.one_day_price_change %}
+              <span class="font-mono text-xs rounded px-1.5 py-0.5
+                {% if change > 0 %}bg-amber-500/20 text-amber-400
+                {% elif change < 0 %}bg-emerald-500/20 text-emerald-400
+                {% else %}bg-charcoal-600/50 text-charcoal-300{% endif %}">
+                {% if change > 0 %}+{% endif %}{{ "%.1f"|format(change) }}%
+              </span>
+            {% else %}
+              <span class="text-xs text-charcoal-500">—</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    
+    {% if regular_events %}
+    <div class="{% if flagged_events %}border-t border-charcoal-600/50 pt-4{% endif %}">
+      {% if flagged_events %}
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-charcoal-300 mb-3">Trending Markets</h3>
+      {% endif %}
+      <div class="space-y-2">
+        {% for event in regular_events[:5] %}
+        <div class="flex items-center justify-between gap-3 py-1.5">
+          <p class="text-xs text-charcoal-200 truncate flex-1">{{ event.title }}</p>
+          <div class="flex items-center gap-2 shrink-0">
+            {% if event.one_day_price_change is not none %}
+              {% set change = event.one_day_price_change %}
+              <span class="font-mono text-xs
+                {% if change > 0 %}text-amber-400
+                {% elif change < 0 %}text-emerald-400
+                {% else %}text-charcoal-400{% endif %}">
+                {% if change > 0 %}+{% endif %}{{ "%.1f"|format(change) }}%
+              </span>
+            {% else %}
+              <span class="text-xs text-charcoal-500">—</span>
+            {% endif %}
+            <span class="text-xs text-charcoal-400">
+              {% if event.volume_24h %}${{ "{:,.0f}".format(event.volume_24h) }}{% else %}—{% endif %}
+            </span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center">
+  <svg class="w-8 h-8 text-charcoal-500 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+  </svg>
+  <p class="text-charcoal-400 text-sm">No market data available</p>
+</div>
+{% endif %}

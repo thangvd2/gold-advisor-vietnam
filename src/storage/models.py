@@ -100,3 +100,46 @@ class NewsItem(Base):
         default=lambda: datetime.now(timezone.utc),
         server_default=func.now(),
     )
+
+
+class FedWatchSnapshot(Base):
+    __tablename__ = "fedwatch_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    implied_rate: Mapped[float] = mapped_column(Float)
+    futures_price: Mapped[float] = mapped_column(Float)
+    contract_symbol: Mapped[str] = mapped_column(String(20))
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class PolymarketEvent(Base):
+    __tablename__ = "polymarket_events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(200))
+    title: Mapped[str] = mapped_column(String(500))
+    question: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    outcome_prices: Mapped[str | None] = mapped_column(Text, nullable=True)
+    volume_24h: Mapped[float | None] = mapped_column(Float, nullable=True)
+    liquidity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    one_day_price_change: Mapped[float | None] = mapped_column(Float, nullable=True)
+    one_hour_price_change: Mapped[float | None] = mapped_column(Float, nullable=True)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_flagged: Mapped[bool] = mapped_column(Boolean, default=False)
+    timestamp: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        Index("idx_polymarket_slug", "slug", unique=True),
+        Index("idx_polymarket_category", "category"),
+        Index("idx_polymarket_flagged", "is_flagged"),
+    )

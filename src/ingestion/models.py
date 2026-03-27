@@ -3,7 +3,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, Field
 
 
 class ProductType(str, Enum):
@@ -22,7 +22,7 @@ class FetchedPrice(BaseModel):
     price_vnd: float | None = None
     currency: str
     timestamp: datetime
-    fetched_at: datetime = datetime.now(timezone.utc)
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @field_validator("buy_price", "sell_price", "price_usd", "price_vnd", mode="before")
     @classmethod

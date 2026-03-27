@@ -153,7 +153,7 @@ function initPriceChart(canvasId, defaultRange) {
 async function loadPriceData(range) {
   var fetches = [
     fetchChartData('/api/prices/history?product_type=sjc_bar&range=' + range),
-    fetchChartData('/api/prices/history?product_type=ring_gold&range=' + range),
+    fetchChartData('/api/prices/history?product_type=ring_gold&source_exclude=local&range=' + range),
     fetchChartData('/api/prices/history?product_type=xau_usd&range=' + range),
     fetchChartData('/api/prices/history?product_type=ring_gold&source=local&range=' + range)
   ];

@@ -141,6 +141,8 @@ class TestSchedulerIntegration:
         settings = MagicMock()
         settings.fetch_interval_minutes = 5
         settings.news_fetch_interval_minutes = 30
+        settings.fedwatch_fetch_interval_minutes = 30
+        settings.polymarket_fetch_interval_minutes = 30
         start_scheduler(app_state, [], MagicMock(), settings)
 
         jobs = app_state["scheduler"].get_jobs()

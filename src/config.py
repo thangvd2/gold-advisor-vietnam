@@ -24,3 +24,7 @@ class Settings(BaseSettings):
     openai_model_name: str = "glm-5-turbo"
     openai_base_url: str = "https://api.z.ai/api/coding/paas/v4"
     goldapi_key: str = ""
+    polymarket_fetch_interval_minutes: int = 30
+    fedwatch_fetch_interval_minutes: int = 30
+    polymarket_volume_min: float = 100000
+    polymarket_move_threshold: float = 0.05

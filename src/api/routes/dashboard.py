@@ -11,7 +11,11 @@ from src.config import Settings, VNTZ
 from src.engine.pipeline import compute_signal
 from src.engine.types import SignalMode
 from src.storage.database import async_session
-from src.storage.repository import get_latest_prices, get_recent_news
+from src.storage.repository import (
+    get_latest_prices,
+    get_last_price_change_times,
+    get_recent_news,
+)
 
 from pathlib import Path
 
@@ -54,6 +58,7 @@ def _get_db_path() -> str:
 async def get_dashboard_prices():
     async with async_session() as session:
         prices = await get_latest_prices(session)
+        change_times = await get_last_price_change_times(session)
 
     if not prices:
         return {"dealers": []}
@@ -86,6 +91,12 @@ async def get_dashboard_prices():
             if current is None or p.fetched_at > current:
                 entry["_max_fetched_at"] = p.fetched_at
 
+        ct = change_times.get((p.source, p.product_type))
+        if ct:
+            cur = entry.get("_max_price_changed_at")
+            if cur is None or ct > cur:
+                entry["_max_price_changed_at"] = ct
+
     for entry in grouped.values():
         raw = entry.pop("_max_fetched_at", None)
         if raw:
@@ -95,6 +106,15 @@ async def get_dashboard_prices():
                 else raw.replace(tzinfo=timezone.utc).astimezone(VNTZ)
             )
             entry["fetched_at"] = vn_dt.isoformat()
+
+        raw_change = entry.pop("_max_price_changed_at", None)
+        if raw_change:
+            vn_dt = (
+                raw_change.astimezone(VNTZ)
+                if raw_change.tzinfo
+                else raw_change.replace(tzinfo=timezone.utc).astimezone(VNTZ)
+            )
+            entry["price_changed_at"] = vn_dt.isoformat()
 
     return {"dealers": list(grouped.values())}
 
@@ -208,6 +228,7 @@ async def get_prices_partial(request: Request):
     try:
         async with async_session() as session:
             prices = await get_latest_prices(session)
+            change_times = await get_last_price_change_times(session)
 
         if not prices:
             return templates.TemplateResponse(
@@ -244,6 +265,12 @@ async def get_prices_partial(request: Request):
                 if current is None or p.fetched_at > current:
                     entry["_max_fetched_at"] = p.fetched_at
 
+            ct = change_times.get((p.source, p.product_type))
+            if ct:
+                cur = entry.get("_max_price_changed_at")
+                if cur is None or ct > cur:
+                    entry["_max_price_changed_at"] = ct
+
         for entry in grouped.values():
             raw = entry.pop("_max_fetched_at", None)
             if raw:
@@ -253,6 +280,15 @@ async def get_prices_partial(request: Request):
                     else raw.replace(tzinfo=timezone.utc).astimezone(VNTZ)
                 )
                 entry["fetched_at"] = vn_dt.isoformat()
+
+            raw_change = entry.pop("_max_price_changed_at", None)
+            if raw_change:
+                vn_dt = (
+                    raw_change.astimezone(VNTZ)
+                    if raw_change.tzinfo
+                    else raw_change.replace(tzinfo=timezone.utc).astimezone(VNTZ)
+                )
+                entry["price_changed_at"] = vn_dt.isoformat()
 
         return templates.TemplateResponse(
             request,

@@ -356,9 +356,10 @@ async def history_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     conn = sqlite3.connect(_db_path)
     try:
         rows = conn.execute(
-            """SELECT buy_price, sell_price, spread, timestamp
+            """SELECT buy_price, sell_price, spread, timestamp, MAX(fetched_at) as last_scraped
                FROM price_history
                WHERE source = 'local' AND product_type = 'ring_gold'
+               GROUP BY buy_price, sell_price, timestamp
                ORDER BY timestamp DESC LIMIT ?""",
             (limit,),
         ).fetchall()
@@ -369,10 +370,22 @@ async def history_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await update.message.reply_text("📊 Chưa có dữ liệu. Dùng /update để cập nhật.")
         return
 
-    lines = [f"📜 Lịch sử {LOCAL_STORE_NAME} ({len(rows)} cập nhật gần nhất):\n"]
+    lines = [f"📜 Lịch sử {LOCAL_STORE_NAME} ({len(rows)} lần thay đổi giá):\n"]
     for r in rows:
+        ts = (
+            datetime.fromisoformat(str(r[3]))
+            .replace(tzinfo=timezone.utc)
+            .astimezone(VNTZ)
+            .strftime("%d/%m/%Y %H:%M")
+        )
+        scraped = (
+            datetime.fromisoformat(str(r[4]))
+            .replace(tzinfo=timezone.utc)
+            .astimezone(VNTZ)
+            .strftime("%d/%m %H:%M")
+        )
         lines.append(
-            f"  {datetime.fromisoformat(str(r[3])).astimezone(VNTZ).strftime('%d/%m/%Y %H:%M')}  M: {r[0]:,.0f}  B: {r[1]:,.0f}  ({r[2]:,.0f})"
+            f"  {ts}  M: {r[0]:,.0f}  B: {r[1]:,.0f}  ({r[2]:,.0f})  [cập nhật: {scraped}]"
         )
 
     await update.message.reply_text("\n".join(lines))

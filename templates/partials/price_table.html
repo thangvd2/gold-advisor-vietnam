@@ -15,6 +15,7 @@
             <span class="block">Ring Gold</span>
           </th>
           <th class="text-right px-4 sm:px-6 py-3 font-medium hidden sm:table-cell">Updated</th>
+          <th class="text-right px-4 sm:px-6 py-3 font-medium hidden sm:table-cell">Price Changed</th>
         </tr>
         <tr class="border-b border-charcoal-600/30 text-charcoal-300 text-[10px] uppercase tracking-wider">
           <th class="px-4 sm:px-6 py-1"></th>
@@ -24,6 +25,7 @@
           <th class="text-right px-2 py-1">Buy</th>
           <th class="text-right px-2 py-1">Sell</th>
           <th class="text-right px-2 py-1">Spread</th>
+          <th class="hidden sm:table-cell"></th>
           <th class="hidden sm:table-cell"></th>
         </tr>
       </thead>
@@ -64,6 +66,10 @@
           {% endif %}
           <td class="text-right px-4 sm:px-6 py-3 text-charcoal-300 text-xs hidden sm:table-cell whitespace-nowrap">
             {{ dealer.fetched_at | vn_time }}
+          </td>
+          <td class="text-right px-4 sm:px-6 py-3 text-xs hidden sm:table-cell whitespace-nowrap
+            {% if dealer.price_changed_at %}text-amber-400{% else %}text-charcoal-500{% endif %}">
+            {{ dealer.price_changed_at | vn_time if dealer.price_changed_at else "—" }}
           </td>
         </tr>
         {% endif %}

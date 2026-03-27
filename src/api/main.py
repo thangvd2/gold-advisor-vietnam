@@ -20,6 +20,7 @@ from src.api.routes.dashboard import router as dashboard_router
 from src.api.routes.admin import router as admin_router
 from src.api.routes.news import router as news_router
 from src.api.routes.chat import router as chat_router
+from src.api.routes.polymarket import router as polymarket_router
 from src.config import Settings
 from src.ingestion.fetchers.dxy import DXYFetcher
 from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
@@ -32,7 +33,7 @@ from src.ingestion.scrapers.btmc import BTMCScraper
 from src.ingestion.scrapers.kimphat import KimPhatScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
 from src.alerts.bot import start_bot, stop_bot
-from src.storage.database import init_db
+from src.storage.database import init_db, async_session
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -98,6 +99,45 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.getLogger(__name__).warning(f"Initial news fetch failed: {e}")
 
+    # Initial FedWatch fetch
+    from src.ingestion.fetchers.fedwatch import FedWatchFetcher
+    from src.storage.repository import save_fedwatch_snapshot
+
+    try:
+        fw_fetcher = FedWatchFetcher()
+        fw_data = await fw_fetcher.fetch()
+        if fw_data:
+            async with async_session() as session:
+                await save_fedwatch_snapshot(
+                    session,
+                    fw_data["implied_rate"],
+                    fw_data["futures_price"],
+                    fw_data["contract"],
+                )
+                await session.commit()
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Initial FedWatch fetch failed: {e}")
+
+    # Initial Polymarket fetch
+    from src.ingestion.fetchers.polymarket import PolymarketFetcher
+    from src.ingestion.polymarket.monitor import flag_significant_moves
+    from src.storage.repository import save_polymarket_events
+
+    try:
+        pm_fetcher = PolymarketFetcher()
+        pm_events = await pm_fetcher.fetch()
+        if pm_events:
+            pm_events = flag_significant_moves(
+                pm_events,
+                settings.polymarket_move_threshold,
+                settings.polymarket_volume_min,
+            )
+            async with async_session() as session:
+                await save_polymarket_events(session, pm_events)
+                await session.commit()
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Initial Polymarket fetch failed: {e}")
+
     yield
     await stop_bot()
     stop_scheduler(app_state)
@@ -114,6 +154,7 @@ app.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 app.include_router(admin_router, prefix="/api/admin", tags=["admin"])
 app.include_router(news_router, prefix="/api/news", tags=["news"])
 app.include_router(chat_router, prefix="/api/chat", tags=["chat"])
+app.include_router(polymarket_router, prefix="/dashboard", tags=["polymarket"])
 
 
 @app.get("/")
