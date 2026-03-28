@@ -125,15 +125,24 @@ async def lifespan(app: FastAPI):
 
     try:
         pm_fetcher = PolymarketFetcher()
-        pm_events = await pm_fetcher.fetch()
-        if pm_events:
-            pm_events = flag_significant_moves(
-                pm_events,
+        pm_result = await pm_fetcher.fetch()
+        pm_gold = pm_result.get("gold_macro", [])
+        pm_movers = pm_result.get("market_movers", [])
+        gold_slugs = {e["slug"] for e in pm_gold}
+        pm_movers = [e for e in pm_movers if e["slug"] not in gold_slugs]
+        for e in pm_gold:
+            e["event_type"] = "gold_macro"
+        for e in pm_movers:
+            e["event_type"] = "market_mover"
+        all_pm = pm_gold + pm_movers
+        if all_pm:
+            all_pm = flag_significant_moves(
+                all_pm,
                 settings.polymarket_move_threshold,
                 settings.polymarket_volume_min,
             )
             async with async_session() as session:
-                await save_polymarket_events(session, pm_events)
+                await save_polymarket_events(session, all_pm)
                 await session.commit()
     except Exception as e:
         logging.getLogger(__name__).warning(f"Initial Polymarket fetch failed: {e}")

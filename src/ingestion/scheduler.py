@@ -100,30 +100,132 @@ def _fedwatch_sync(settings):
 
 
 def _polymarket_sync(settings):
-    from src.config import Settings
+    import json
+
     from src.ingestion.fetchers.polymarket import PolymarketFetcher
     from src.ingestion.polymarket.monitor import flag_significant_moves
     from src.storage.database import async_session
-    from src.storage.repository import save_polymarket_events
+    from src.storage.repository import (
+        get_previous_snapshots,
+        get_recent_news,
+        save_polymarket_events,
+        save_price_snapshots,
+        save_smart_signal,
+    )
 
     fetcher = PolymarketFetcher()
     loop = asyncio.new_event_loop()
     try:
-        events = loop.run_until_complete(fetcher.fetch())
-        if events:
-            s = Settings()
-            events = flag_significant_moves(
-                events, s.polymarket_move_threshold, s.polymarket_volume_min
+        result = loop.run_until_complete(fetcher.fetch())
+        gold_macro = result.get("gold_macro", [])
+        market_movers = result.get("market_movers", [])
+        gold_slugs = {e["slug"] for e in gold_macro}
+        market_movers = [e for e in market_movers if e["slug"] not in gold_slugs]
+
+        for e in gold_macro:
+            e["event_type"] = "gold_macro"
+        for e in market_movers:
+            e["event_type"] = "market_mover"
+
+        all_events = gold_macro + market_movers
+        if all_events:
+            all_events = flag_significant_moves(
+                all_events,
+                settings.polymarket_move_threshold,
+                settings.polymarket_volume_min,
             )
+
+            snapshots = []
+            for e in all_events:
+                yes_price = None
+                raw_prices = e.get("outcome_prices")
+                if raw_prices:
+                    try:
+                        prices = (
+                            json.loads(raw_prices)
+                            if isinstance(raw_prices, str)
+                            else raw_prices
+                        )
+                        if prices:
+                            yes_price = float(prices[0])
+                    except (ValueError, TypeError, IndexError):
+                        pass
+                if yes_price is None:
+                    continue
+                snapshots.append(
+                    {
+                        "slug": e["slug"],
+                        "title": e["title"],
+                        "yes_price": yes_price,
+                        "volume_24h": e.get("volume_24h"),
+                        "liquidity": e.get("liquidity"),
+                        "one_day_change": e.get("one_day_price_change"),
+                        "category": e.get("category"),
+                    }
+                )
 
             async def _save():
                 async with async_session() as session:
-                    count = await save_polymarket_events(session, events)
+                    count = await save_polymarket_events(session, all_events)
                     logger.info(
-                        "Polymarket: saved %d events, %d flagged",
+                        "Polymarket: saved %d events (%d gold_macro, %d market_movers), %d flagged",
                         count,
-                        sum(1 for e in events if e.get("is_flagged")),
+                        len(gold_macro),
+                        len(market_movers),
+                        sum(1 for e in all_events if e.get("is_flagged")),
                     )
+
+                    if snapshots:
+                        snap_count = await save_price_snapshots(session, snapshots)
+                        logger.info("Polymarket: saved %d price snapshots", snap_count)
+
+                        prev_snapshots = await get_previous_snapshots(session)
+                        if prev_snapshots:
+                            from src.ingestion.polymarket.smart_money import (
+                                detect_smart_moves,
+                            )
+
+                            recent_news_rows = await get_recent_news(session, limit=50)
+                            recent_news = [
+                                {
+                                    "title": n.title,
+                                    "excerpt": n.excerpt or "",
+                                    "published_at": n.published_at,
+                                }
+                                for n in recent_news_rows
+                            ]
+
+                            new_snap_dicts = [
+                                {k: v for k, v in s.items()} for s in snapshots
+                            ]
+                            prev_snap_dicts = [
+                                {
+                                    "slug": s.slug,
+                                    "title": s.title,
+                                    "yes_price": s.yes_price,
+                                    "volume_24h": s.volume_24h,
+                                    "liquidity": s.liquidity,
+                                    "one_day_change": s.one_day_change,
+                                    "category": s.category,
+                                    "fetched_at": s.fetched_at,
+                                }
+                                for s in prev_snapshots
+                            ]
+
+                            signals = detect_smart_moves(
+                                new_snap_dicts, prev_snap_dicts, recent_news
+                            )
+                            for sig in signals:
+                                await save_smart_signal(session, sig)
+                                logger.info(
+                                    "Smart money signal: %s (%s) — %s, %.1f¢ %s",
+                                    sig["title"][:40],
+                                    sig["signal_type"],
+                                    sig["confidence"],
+                                    sig["move_cents"],
+                                    sig["move_direction"],
+                                )
+
                     await session.commit()
 
             loop2 = asyncio.new_event_loop()
@@ -131,8 +233,8 @@ def _polymarket_sync(settings):
                 loop2.run_until_complete(_save())
             finally:
                 loop2.close()
-    except Exception as e:
-        logger.warning("Polymarket fetch failed: %s", e)
+    except Exception:
+        logger.warning("Polymarket sync failed", exc_info=True)
     finally:
         loop.close()
 

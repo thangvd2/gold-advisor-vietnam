@@ -26,5 +26,8 @@ class Settings(BaseSettings):
     goldapi_key: str = ""
     polymarket_fetch_interval_minutes: int = 30
     fedwatch_fetch_interval_minutes: int = 30
-    polymarket_volume_min: float = 100000
-    polymarket_move_threshold: float = 0.05
+    polymarket_volume_min: float = 1000
+    polymarket_move_threshold: float = 5.0
+    smart_money_lookback_hours: int = 4
+    smart_money_min_confidence: float = 0.5
+    smart_money_signal_retention_days: int = 7

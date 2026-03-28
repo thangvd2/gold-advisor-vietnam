@@ -8,7 +8,12 @@ from fastapi.templating import Jinja2Templates
 
 from src.config import VNTZ
 from src.storage.database import async_session
-from src.storage.repository import get_latest_fedwatch, get_polymarket_events
+from src.storage.repository import (
+    dismiss_signal,
+    get_latest_fedwatch,
+    get_polymarket_events,
+    get_recent_smart_signals,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,15 +69,19 @@ async def fedwatch_partial(request: Request):
 async def polymarket_partial(request: Request):
     try:
         async with async_session() as session:
-            events = await get_polymarket_events(session, limit=10)
-            flagged = await get_polymarket_events(session, flagged_only=True, limit=5)
-        context = {"events": events, "flagged": flagged}
-        if events and events[0].fetched_at:
-            context["fetched_at"] = events[0].fetched_at
+            gold_macro = await get_polymarket_events(
+                session, event_type="gold_macro", limit=10
+            )
+        fetched_at = None
+        if gold_macro and gold_macro[0].fetched_at:
+            fetched_at = gold_macro[0].fetched_at
         return templates.TemplateResponse(
             request,
             "partials/polymarket.html",
-            context={"events": events, "flagged": flagged},
+            context={
+                "gold_macro": gold_macro,
+                "fetched_at": fetched_at,
+            },
         )
     except Exception:
         logger.warning("Polymarket partial failed", exc_info=True)
@@ -80,3 +89,68 @@ async def polymarket_partial(request: Request):
         content='<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center"><p class="text-charcoal-400 text-sm">Polymarket data unavailable</p></div>',
         status_code=200,
     )
+
+
+@router.get("/partials/polymarket/market-movers")
+async def market_movers_partial(request: Request):
+    try:
+        async with async_session() as session:
+            market_movers = await get_polymarket_events(
+                session, event_type="market_mover", limit=20
+            )
+        fetched_at = None
+        if market_movers and market_movers[0].fetched_at:
+            fetched_at = market_movers[0].fetched_at
+        return templates.TemplateResponse(
+            request,
+            "partials/polymarket_market_movers.html",
+            context={
+                "market_movers": market_movers,
+                "fetched_at": fetched_at,
+            },
+        )
+    except Exception:
+        logger.warning("Market movers partial failed", exc_info=True)
+    return HTMLResponse(
+        content='<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center"><p class="text-charcoal-400 text-sm">Market movers unavailable</p></div>',
+        status_code=200,
+    )
+
+
+@router.get("/polymarket")
+async def polymarket_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "polymarket.html",
+        context={},
+    )
+
+
+@router.get("/partials/polymarket/smart-signals")
+async def smart_signals_partial(request: Request):
+    try:
+        async with async_session() as session:
+            signals = await get_recent_smart_signals(session, hours=48, limit=20)
+        return templates.TemplateResponse(
+            request,
+            "partials/polymarket_smart_signals.html",
+            context={"signals": signals},
+        )
+    except Exception:
+        logger.warning("Smart signals partial failed", exc_info=True)
+        return HTMLResponse(
+            content='<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 p-8 text-center"><p class="text-charcoal-400 text-sm">Smart signals unavailable</p></div>',
+            status_code=200,
+        )
+
+
+@router.delete("/api/smart-signals/{signal_id}/dismiss")
+async def dismiss_smart_signal(signal_id: int):
+    try:
+        async with async_session() as session:
+            await dismiss_signal(session, signal_id)
+            await session.commit()
+        return HTMLResponse(content="", status_code=204)
+    except Exception:
+        logger.warning("Dismiss signal failed", exc_info=True)
+        return HTMLResponse(content="Error", status_code=500)

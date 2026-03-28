@@ -1,0 +1,50 @@
+<div class="card-glow rounded-2xl bg-charcoal-700/60 border border-gold-500/15 overflow-hidden">
+  <div class="p-4 sm:p-6 border-b border-gold-500/10">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+        </svg>
+        <h2 class="text-sm font-semibold uppercase tracking-[0.15em] text-charcoal-200">
+          <span data-lang="en">Market Movers</span><span data-lang="vn">Xu hướng thị trường</span>
+        </h2>
+      </div>
+      <span class="text-xs text-charcoal-400">{{ fetched_at | vn_time if fetched_at else "—" }}</span>
+    </div>
+  </div>
+
+  <div class="p-4 sm:p-6">
+    {% if market_movers %}
+    <div class="space-y-2">
+      {% for event in market_movers %}
+      <div class="flex items-start justify-between gap-3 p-3 rounded-lg bg-charcoal-800/40 hover:bg-charcoal-800/60 transition-colors">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-charcoal-100">{{ event.title }}</p>
+          <div class="flex items-center gap-2 mt-0.5">
+            {% if event.volume_24h %}<span class="text-xs text-charcoal-400">Vol: ${{ "{:,.0f}".format(event.volume_24h) }}</span>{% endif %}
+            {% if event.category %}<span class="text-xs px-1.5 py-0.5 rounded bg-charcoal-600/40 text-charcoal-300">{{ event.category }}</span>{% endif %}
+          </div>
+        </div>
+        <div class="shrink-0">
+          {% if event.one_day_price_change is not none %}
+            {% set change = event.one_day_price_change %}
+            <span class="font-mono text-xs rounded px-1.5 py-0.5
+              {% if change > 0 %}bg-amber-500/20 text-amber-400
+              {% elif change < 0 %}bg-emerald-500/20 text-emerald-400
+              {% else %}bg-charcoal-600/50 text-charcoal-300{% endif %}">
+              {% if change > 0 %}+{% endif %}{{ "%.1f"|format(change) }}%
+            </span>
+          {% else %}
+            <span class="text-xs text-charcoal-500">—</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-sm text-charcoal-500 text-center py-6">
+      <span data-lang="en">No market movers data available</span><span data-lang="vn">Chưa có dữ liệu xu hướng thị trường</span>
+    </p>
+    {% endif %}
+  </div>
+</div>

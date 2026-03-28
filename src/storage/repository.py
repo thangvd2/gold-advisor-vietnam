@@ -12,6 +12,8 @@ from src.storage.models import (
     FedWatchSnapshot,
     NewsItem,
     PolymarketEvent,
+    PolymarketPriceSnapshot,
+    PolymarketSmartSignal,
     PriceRecord,
     SignalRecord,
 )
@@ -295,6 +297,7 @@ async def save_polymarket_events(session: AsyncSession, events: list[dict]) -> i
                 liquidity=e.get("liquidity"),
                 one_day_price_change=e.get("one_day_price_change"),
                 one_hour_price_change=e.get("one_hour_price_change"),
+                event_type=e.get("event_type", "market_mover"),
                 category=e.get("category"),
                 is_flagged=e.get("is_flagged", False),
             )
@@ -308,6 +311,7 @@ async def save_polymarket_events(session: AsyncSession, events: list[dict]) -> i
                     "liquidity": e.get("liquidity"),
                     "one_day_price_change": e.get("one_day_price_change"),
                     "one_hour_price_change": e.get("one_hour_price_change"),
+                    "event_type": e.get("event_type", "market_mover"),
                     "category": e.get("category"),
                     "is_flagged": e.get("is_flagged", False),
                     "fetched_at": func.now(),
@@ -321,14 +325,130 @@ async def save_polymarket_events(session: AsyncSession, events: list[dict]) -> i
 
 
 async def get_polymarket_events(
-    session: AsyncSession, flagged_only: bool = False, limit: int = 20
+    session: AsyncSession,
+    event_type: str | None = None,
+    limit: int = 20,
 ) -> list[PolymarketEvent]:
     from sqlalchemy import desc
 
     stmt = (
         select(PolymarketEvent).order_by(desc(PolymarketEvent.fetched_at)).limit(limit)
     )
-    if flagged_only:
-        stmt = stmt.where(PolymarketEvent.is_flagged == True)
+    if event_type:
+        stmt = stmt.where(PolymarketEvent.event_type == event_type)
     result = await session.execute(stmt)
     return list(result.scalars().all())
+
+
+async def save_price_snapshots(session: AsyncSession, snapshots: list[dict]) -> int:
+    for s in snapshots:
+        record = PolymarketPriceSnapshot(
+            slug=s["slug"],
+            title=s["title"],
+            yes_price=s["yes_price"],
+            volume_24h=s.get("volume_24h"),
+            liquidity=s.get("liquidity"),
+            one_day_change=s.get("one_day_change"),
+            category=s.get("category"),
+        )
+        session.add(record)
+    await session.flush()
+    return len(snapshots)
+
+
+async def get_previous_snapshots(
+    session: AsyncSession, hours: float = 1.0
+) -> list[PolymarketPriceSnapshot]:
+    from datetime import timedelta
+
+    from sqlalchemy import desc
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    stmt = (
+        select(PolymarketPriceSnapshot)
+        .where(PolymarketPriceSnapshot.fetched_at < cutoff)
+        .order_by(desc(PolymarketPriceSnapshot.fetched_at))
+        .limit(500)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_latest_snapshots_per_slug(
+    session: AsyncSession, slugs: set[str] | None = None
+) -> dict[str, PolymarketPriceSnapshot]:
+    sub = select(
+        PolymarketPriceSnapshot.slug,
+        func.max(PolymarketPriceSnapshot.fetched_at).label("max_fa"),
+    ).group_by(PolymarketPriceSnapshot.slug)
+    if slugs:
+        sub = sub.where(PolymarketPriceSnapshot.slug.in_(slugs))
+    sub = sub.subquery()
+
+    stmt = select(PolymarketPriceSnapshot).join(
+        sub,
+        (PolymarketPriceSnapshot.slug == sub.c.slug)
+        & (PolymarketPriceSnapshot.fetched_at == sub.c.max_fa),
+    )
+    result = await session.execute(stmt)
+    return {row.slug: row for row in result.scalars().all()}
+
+
+async def save_smart_signal(
+    session: AsyncSession, signal: dict
+) -> PolymarketSmartSignal:
+    record = PolymarketSmartSignal(
+        slug=signal["slug"],
+        title=signal["title"],
+        signal_type=signal["signal_type"],
+        price_before=signal["price_before"],
+        price_after=signal["price_after"],
+        move_cents=signal["move_cents"],
+        move_direction=signal["move_direction"],
+        news_count_4h=signal["news_count_4h"],
+        news_consensus=signal["news_consensus"],
+        confidence=signal["confidence"],
+        reasoning_en=signal["reasoning_en"],
+        reasoning_vn=signal["reasoning_vn"],
+        category=signal.get("category"),
+    )
+    session.add(record)
+    await session.flush()
+    return record
+
+
+async def get_recent_smart_signals(
+    session: AsyncSession,
+    hours: int = 48,
+    limit: int = 20,
+    min_confidence: float = 0.5,
+) -> list[PolymarketSmartSignal]:
+    from datetime import timedelta
+
+    from sqlalchemy import desc
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    stmt = (
+        select(PolymarketSmartSignal)
+        .where(
+            PolymarketSmartSignal.detected_at >= cutoff,
+            PolymarketSmartSignal.confidence >= min_confidence,
+            PolymarketSmartSignal.is_dismissed == False,  # noqa: E712
+        )
+        .order_by(desc(PolymarketSmartSignal.detected_at))
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def dismiss_signal(session: AsyncSession, signal_id: int) -> None:
+    from sqlalchemy import update
+
+    stmt = (
+        update(PolymarketSmartSignal)
+        .where(PolymarketSmartSignal.id == signal_id)
+        .values(is_dismissed=True)
+    )
+    await session.execute(stmt)
+    await session.flush()

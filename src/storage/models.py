@@ -129,6 +129,7 @@ class PolymarketEvent(Base):
     liquidity: Mapped[float | None] = mapped_column(Float, nullable=True)
     one_day_price_change: Mapped[float | None] = mapped_column(Float, nullable=True)
     one_hour_price_change: Mapped[float | None] = mapped_column(Float, nullable=True)
+    event_type: Mapped[str] = mapped_column(String(20), default="market_mover")
     category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_flagged: Mapped[bool] = mapped_column(Boolean, default=False)
     timestamp: Mapped[datetime] = mapped_column(
@@ -142,4 +143,62 @@ class PolymarketEvent(Base):
         Index("idx_polymarket_slug", "slug", unique=True),
         Index("idx_polymarket_category", "category"),
         Index("idx_polymarket_flagged", "is_flagged"),
+    )
+
+
+class PolymarketPriceSnapshot(Base):
+    """Append-only price history for Polymarket events (one row per event per fetch)."""
+
+    __tablename__ = "polymarket_price_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(200))
+    title: Mapped[str] = mapped_column(String(500))
+    yes_price: Mapped[float] = mapped_column(Float)
+    volume_24h: Mapped[float | None] = mapped_column(Float, nullable=True)
+    liquidity: Mapped[float | None] = mapped_column(Float, nullable=True)
+    one_day_change: Mapped[float | None] = mapped_column(Float, nullable=True)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        Index("idx_pm_snap_slug_fetched", "slug", "fetched_at"),
+        Index("idx_pm_snap_fetched", "fetched_at"),
+    )
+
+
+class PolymarketSmartSignal(Base):
+    """Detected smart money signals from contrarian Polymarket moves."""
+
+    __tablename__ = "polymarket_smart_signals"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(200))
+    title: Mapped[str] = mapped_column(String(500))
+    signal_type: Mapped[str] = mapped_column(String(20))  # contrarian, no_news
+    price_before: Mapped[float] = mapped_column(Float)
+    price_after: Mapped[float] = mapped_column(Float)
+    move_cents: Mapped[float] = mapped_column(Float)
+    move_direction: Mapped[str] = mapped_column(String(5))  # up, down
+    news_count_4h: Mapped[int] = mapped_column(Integer, default=0)
+    news_consensus: Mapped[str] = mapped_column(
+        String(20)
+    )  # supports, contradicts, none
+    confidence: Mapped[float] = mapped_column(Float)
+    reasoning_en: Mapped[str] = mapped_column(Text)
+    reasoning_vn: Mapped[str] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    detected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+    is_dismissed: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default="0"
+    )
+
+    __table_args__ = (
+        Index("idx_pm_signal_slug", "slug"),
+        Index("idx_pm_signal_detected", "detected_at"),
+        Index("idx_pm_signal_dismissed", "is_dismissed"),
     )
