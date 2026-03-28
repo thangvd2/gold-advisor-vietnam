@@ -11,6 +11,16 @@ from src.ingestion.fetchers.fx_rate import FxRateFetcher
 logger = logging.getLogger(__name__)
 
 _dispatcher = None
+_polymarket_dispatcher = None
+
+
+def _get_polymarket_dispatcher():
+    from src.alerts.dispatcher import AlertDispatcher
+
+    global _polymarket_dispatcher
+    if _polymarket_dispatcher is None:
+        _polymarket_dispatcher = AlertDispatcher()
+    return _polymarket_dispatcher
 
 
 def _get_db_path(settings: Settings) -> str:
@@ -175,6 +185,7 @@ def _polymarket_sync(settings):
                         sum(1 for e in all_events if e.get("is_flagged")),
                     )
 
+                    detected_signals = []
                     if snapshots:
                         snap_count = await save_price_snapshots(session, snapshots)
                         logger.info("Polymarket: saved %d price snapshots", snap_count)
@@ -212,10 +223,10 @@ def _polymarket_sync(settings):
                                 for s in prev_snapshots
                             ]
 
-                            signals = detect_smart_moves(
+                            detected_signals = detect_smart_moves(
                                 new_snap_dicts, prev_snap_dicts, recent_news
                             )
-                            for sig in signals:
+                            for sig in detected_signals:
                                 await save_smart_signal(session, sig)
                                 logger.info(
                                     "Smart money signal: %s (%s) — %s, %.1f¢ %s",
@@ -228,6 +239,16 @@ def _polymarket_sync(settings):
 
                     await session.commit()
 
+                    if detected_signals:
+                        dispatcher = _get_polymarket_dispatcher()
+                        loop3 = asyncio.new_event_loop()
+                        try:
+                            loop3.run_until_complete(
+                                dispatcher.dispatch_smart_money_alerts(detected_signals)
+                            )
+                        finally:
+                            loop3.close()
+
             loop2 = asyncio.new_event_loop()
             try:
                 loop2.run_until_complete(_save())
@@ -235,6 +256,25 @@ def _polymarket_sync(settings):
                 loop2.close()
     except Exception:
         logger.warning("Polymarket sync failed", exc_info=True)
+    finally:
+        loop.close()
+
+
+def _polymarket_clob_backfill(settings):
+    from src.ingestion.polymarket.backfill import run_gap_backfill
+
+    logger.info("Starting periodic CLOB backfill...")
+    loop = asyncio.new_event_loop()
+    try:
+        result = loop.run_until_complete(run_gap_backfill(settings))
+        logger.info(
+            "CLOB backfill complete: %d events, %d snapshots, %d signals",
+            result.get("events_processed", 0),
+            result.get("snapshots_saved", 0),
+            result.get("signals_detected", 0),
+        )
+    except Exception:
+        logger.warning("CLOB backfill failed", exc_info=True)
     finally:
         loop.close()
 
@@ -304,13 +344,23 @@ def start_scheduler(
         replace_existing=True,
         misfire_grace_time=300,
     )
+    scheduler.add_job(
+        _polymarket_clob_backfill,
+        "interval",
+        hours=settings.polymarket_backfill_interval_hours,
+        args=[settings],
+        id="polymarket_clob_backfill",
+        replace_existing=True,
+        misfire_grace_time=3600,
+    )
     scheduler.start()
     logger.info(
-        "Scheduler started: gold_price_fetch + alert_dispatch every %d min, news_fetch every %d min, fedwatch_fetch every %d min, polymarket_fetch every %d min",
+        "Scheduler started: gold_price_fetch + alert_dispatch every %d min, news_fetch every %d min, fedwatch_fetch every %d min, polymarket_fetch every %d min, polymarket_clob_backfill every %d hours",
         settings.fetch_interval_minutes,
         settings.news_fetch_interval_minutes,
         settings.fedwatch_fetch_interval_minutes,
         settings.polymarket_fetch_interval_minutes,
+        settings.polymarket_backfill_interval_hours,
     )
 
 

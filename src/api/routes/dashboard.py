@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -39,6 +40,9 @@ def _vn_time(value, fmt="%d/%m/%Y %H:%M"):
 
 
 templates.env.filters["vn_time"] = _vn_time
+templates.env.filters["from_json"] = lambda v: (
+    json.loads(v) if isinstance(v, str) else (v or [])
+)
 
 
 def get_settings() -> Settings:

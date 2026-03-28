@@ -292,6 +292,7 @@ async def save_polymarket_events(session: AsyncSession, events: list[dict]) -> i
                 slug=e["slug"],
                 title=e["title"],
                 question=e.get("question"),
+                description=e.get("description"),
                 outcome_prices=e.get("outcome_prices"),
                 volume_24h=e.get("volume_24h"),
                 liquidity=e.get("liquidity"),
@@ -300,11 +301,16 @@ async def save_polymarket_events(session: AsyncSession, events: list[dict]) -> i
                 event_type=e.get("event_type", "market_mover"),
                 category=e.get("category"),
                 is_flagged=e.get("is_flagged", False),
+                condition_id=e.get("condition_id"),
+                clob_token_id_yes=e.get("clob_token_id_yes"),
+                market_questions=e.get("market_questions"),
             )
             .on_conflict_do_update(
                 index_elements=["slug"],
                 set_={
                     "title": e["title"],
+                    "description": e.get("description"),
+                    "market_questions": e.get("market_questions"),
                     "question": e.get("question"),
                     "outcome_prices": e.get("outcome_prices"),
                     "volume_24h": e.get("volume_24h"),
@@ -314,6 +320,9 @@ async def save_polymarket_events(session: AsyncSession, events: list[dict]) -> i
                     "event_type": e.get("event_type", "market_mover"),
                     "category": e.get("category"),
                     "is_flagged": e.get("is_flagged", False),
+                    "condition_id": e.get("condition_id"),
+                    "clob_token_id_yes": e.get("clob_token_id_yes"),
+                    "market_questions": e.get("market_questions"),
                     "fetched_at": func.now(),
                 },
             )
@@ -356,6 +365,33 @@ async def save_price_snapshots(session: AsyncSession, snapshots: list[dict]) -> 
     return len(snapshots)
 
 
+async def save_price_snapshots_backfill(
+    session: AsyncSession, snapshots: list[dict]
+) -> int:
+    for s in snapshots:
+        record = PolymarketPriceSnapshot(
+            slug=s["slug"],
+            title=s["title"],
+            yes_price=s["yes_price"],
+            volume_24h=s.get("volume_24h"),
+            liquidity=s.get("liquidity"),
+            one_day_change=s.get("one_day_change"),
+            category=s.get("category"),
+            fetched_at=s.get("fetched_at"),
+        )
+        session.add(record)
+    await session.flush()
+    return len(snapshots)
+
+
+async def get_events_with_clob_tokens(
+    session: AsyncSession,
+) -> list[PolymarketEvent]:
+    stmt = select(PolymarketEvent).where(PolymarketEvent.clob_token_id_yes.isnot(None))
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
 async def get_previous_snapshots(
     session: AsyncSession, hours: float = 1.0
 ) -> list[PolymarketPriceSnapshot]:
@@ -392,6 +428,24 @@ async def get_latest_snapshots_per_slug(
     )
     result = await session.execute(stmt)
     return {row.slug: row for row in result.scalars().all()}
+
+
+async def get_latest_snapshot_ts_per_slug(
+    session: AsyncSession,
+    slugs: set[str] | None = None,
+) -> dict[str, datetime]:
+    """Get the latest fetched_at timestamp per slug. Returns {slug: datetime}."""
+    sub = select(
+        PolymarketPriceSnapshot.slug,
+        func.max(PolymarketPriceSnapshot.fetched_at).label("max_fa"),
+    ).group_by(PolymarketPriceSnapshot.slug)
+    if slugs:
+        sub = sub.where(PolymarketPriceSnapshot.slug.in_(slugs))
+    sub = sub.subquery()
+
+    stmt = select(sub.c.slug, sub.c.max_fa)
+    result = await session.execute(stmt)
+    return {row.slug: row.max_fa for row in result.all()}
 
 
 async def save_smart_signal(

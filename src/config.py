@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     fedwatch_fetch_interval_minutes: int = 30
     polymarket_volume_min: float = 1000
     polymarket_move_threshold: float = 5.0
+    polymarket_gold_min_volume: float = 1000
+    polymarket_gold_min_change: float = 3.0
+    polymarket_mover_min_volume: float = 10000
+    polymarket_mover_min_change: float = 3.0
     smart_money_lookback_hours: int = 4
     smart_money_min_confidence: float = 0.5
     smart_money_signal_retention_days: int = 7
+    polymarket_backfill_interval_hours: int = 6
+    polymarket_backfill_fidelity: int = 60
+    polymarket_backfill_default_hours: int = 24
+    polymarket_backfill_max_days: int = 7

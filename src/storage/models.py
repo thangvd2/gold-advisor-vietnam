@@ -124,6 +124,8 @@ class PolymarketEvent(Base):
     slug: Mapped[str] = mapped_column(String(200))
     title: Mapped[str] = mapped_column(String(500))
     question: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    market_questions: Mapped[str | None] = mapped_column(Text, nullable=True)
     outcome_prices: Mapped[str | None] = mapped_column(Text, nullable=True)
     volume_24h: Mapped[float | None] = mapped_column(Float, nullable=True)
     liquidity: Mapped[float | None] = mapped_column(Float, nullable=True)
@@ -132,6 +134,8 @@ class PolymarketEvent(Base):
     event_type: Mapped[str] = mapped_column(String(20), default="market_mover")
     category: Mapped[str | None] = mapped_column(String(50), nullable=True)
     is_flagged: Mapped[bool] = mapped_column(Boolean, default=False)
+    condition_id: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    clob_token_id_yes: Mapped[str | None] = mapped_column(String(200), nullable=True)
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -196,6 +200,9 @@ class PolymarketSmartSignal(Base):
     is_dismissed: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default="0"
     )
+    llm_explanation_en: Mapped[str | None] = mapped_column(Text)
+    llm_explanation_vn: Mapped[str | None] = mapped_column(Text)
+    llm_generated_at: Mapped[datetime | None] = mapped_column(DateTime)
 
     __table_args__ = (
         Index("idx_pm_signal_slug", "slug"),

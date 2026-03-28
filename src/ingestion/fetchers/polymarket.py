@@ -1,3 +1,4 @@
+import json
 import logging
 
 import httpx
@@ -77,19 +78,33 @@ class PolymarketFetcher:
             await self.client.aclose()
 
     async def _fetch_gold_macro_events(self) -> list[dict]:
+        from src.config import Settings
+
+        settings = Settings()
         search_events = []
         for query in GOLD_MACRO_SEARCHES:
             search_events.extend(await self._search_events(query))
         active = await self._fetch_active_events()
         keyword_events = [e for e in active if self._matches_gold_macro(e)]
         all_events = self._deduplicate_by_slug(search_events + keyword_events)
-        filtered = self._filter_by_move(all_events, min_volume=1000, min_change=3.0)
+        filtered = self._filter_by_move(
+            all_events,
+            min_volume=settings.polymarket_gold_min_volume,
+            min_change=settings.polymarket_gold_min_change,
+        )
         return [self._extract_event_fields(e) for e in filtered]
 
     async def _fetch_market_movers(self) -> list[dict]:
+        from src.config import Settings
+
+        settings = Settings()
         raw = await self._fetch_active_events()
         cleaned = [e for e in raw if not self._is_excluded_category(e)]
-        filtered = self._filter_by_move(cleaned, min_volume=10000, min_change=3.0)
+        filtered = self._filter_by_move(
+            cleaned,
+            min_volume=settings.polymarket_mover_min_volume,
+            min_change=settings.polymarket_mover_min_change,
+        )
         return [self._extract_event_fields(e) for e in filtered]
 
     async def _fetch_active_events(self) -> list[dict]:
@@ -182,6 +197,7 @@ class PolymarketFetcher:
         slug = event.get("slug") or str(event.get("id", ""))
         title = event.get("title", "")
         question = event.get("question")
+        description = event.get("description")
         markets = event.get("markets", [])
         volume_24h = 0.0
         liquidity = 0.0
@@ -219,14 +235,62 @@ class PolymarketFetcher:
             except (ValueError, TypeError):
                 one_hour_price_change = None
         category = self._get_tag_label(event)
+
+        market_questions = None
+        if markets:
+            items = []
+            for m in markets:
+                q = m.get("question", "")
+                if not q:
+                    continue
+                raw_prices = m.get("outcomePrices", "[]")
+                try:
+                    prices = (
+                        json.loads(raw_prices)
+                        if isinstance(raw_prices, str)
+                        else raw_prices
+                    )
+                except (ValueError, TypeError):
+                    prices = []
+                yes_price = None
+                if isinstance(prices, list) and len(prices) >= 1:
+                    try:
+                        yes_price = round(float(prices[0]) * 100, 1)
+                    except (ValueError, TypeError):
+                        pass
+                items.append({"q": q, "p": yes_price})
+            if items:
+                market_questions = json.dumps(items, ensure_ascii=False)
+
+        clob_token_id_yes = None
+        condition_id = None
+        if markets:
+            first_market = markets[0]
+            raw_token_ids = first_market.get("clobTokenIds", "[]")
+            try:
+                token_ids = (
+                    json.loads(raw_token_ids)
+                    if isinstance(raw_token_ids, str)
+                    else raw_token_ids
+                )
+                if isinstance(token_ids, list) and len(token_ids) >= 1:
+                    clob_token_id_yes = token_ids[0]
+            except (ValueError, TypeError):
+                pass
+            condition_id = first_market.get("conditionId")
+
         return {
             "slug": slug,
             "title": title,
             "question": question,
+            "description": description,
             "outcome_prices": outcome_prices,
             "volume_24h": volume_24h,
             "liquidity": liquidity,
-            "one_day_price_change": one_day_price_change,  # NOW IN PERCENT (e.g. 5.5, not 0.055)
+            "one_day_price_change": one_day_price_change,
             "one_hour_price_change": one_hour_price_change,
             "category": category,
+            "condition_id": condition_id,
+            "clob_token_id_yes": clob_token_id_yes,
+            "market_questions": market_questions,
         }

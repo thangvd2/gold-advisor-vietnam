@@ -1,3 +1,4 @@
+import json
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -53,6 +54,9 @@ def _vn_time(value, fmt="%d/%m/%Y %H:%M"):
 
 
 templates.env.filters["vn_time"] = _vn_time
+templates.env.filters["from_json"] = lambda v: (
+    json.loads(v) if isinstance(v, str) else (v or [])
+)
 
 app_state: dict = {}
 
@@ -146,6 +150,20 @@ async def lifespan(app: FastAPI):
                 await session.commit()
     except Exception as e:
         logging.getLogger(__name__).warning(f"Initial Polymarket fetch failed: {e}")
+
+    try:
+        from src.ingestion.polymarket.backfill import run_gap_backfill
+
+        backfill_result = await run_gap_backfill(settings)
+        if backfill_result.get("snapshots_saved", 0) > 0:
+            logging.getLogger(__name__).info(
+                "Startup backfill: %d snapshots for %d events, %d signals detected",
+                backfill_result.get("snapshots_saved", 0),
+                backfill_result.get("events_processed", 0),
+                backfill_result.get("signals_detected", 0),
+            )
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Startup CLOB backfill failed: {e}")
 
     yield
     await stop_bot()

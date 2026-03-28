@@ -1,5 +1,7 @@
 import logging
+from datetime import datetime, timedelta, timezone
 
+from src.config import Settings
 from src.engine.types import Recommendation, Signal, SignalMode
 from src.alerts.bot import SUBSCRIBED_CHATS, _application
 
@@ -15,6 +17,7 @@ class AlertDispatcher:
     def __init__(self):
         self._last_signals: dict[SignalMode, Signal] = {}
         self._last_sjc_price: float | None = None
+        self._alerted_slugs_with_timestamp: dict[str, datetime] = {}
 
     def _should_alert_confidence(self, old_conf: int, new_conf: int) -> bool:
         return abs(new_conf - old_conf) >= self.SIGNAL_CONFIDENCE_THRESHOLD
@@ -110,3 +113,60 @@ class AlertDispatcher:
                 await _application.bot.send_message(chat_id=chat_id, text=message)
             except Exception:
                 logger.exception("Failed to send alert to %s", chat_id)
+
+    def _format_smart_money_alert(self, signal: dict) -> str:
+        arrow = "📈" if signal["move_direction"] == "up" else "📉"
+        confidence_pct = int(signal["confidence"] * 100)
+        move_cents = signal["move_cents"]
+
+        lines = [
+            "🔮 Smart Money Signal Detected!",
+            "",
+            f"📌 {signal['title']}",
+            f"Category: {signal.get('category', 'N/A')} | Type: {signal['signal_type']} (contrarian/no_news)",
+            f"{arrow} {move_cents}¢ move (confidence: {confidence_pct}%)",
+            "",
+            f"📊 Market Consensus: {signal.get('news_consensus', 'N/A')}",
+            f"{signal.get('news_count_4h', 0)} related news articles in last 4 hours",
+            "",
+            f"💡 {signal['reasoning_vn']}",
+            "",
+            f"💡 {signal['reasoning_en']}",
+            "",
+            "⚠️ Market information only, not financial advice.",
+            "Thông tin thị trường, không phải tư vấn đầu tư.",
+        ]
+        return "\n".join(lines)
+
+    async def dispatch_smart_money_alerts(self, signals: list[dict]) -> int:
+        if not signals:
+            return 0
+
+        now = datetime.now(timezone.utc)
+        ttl = timedelta(hours=2)
+        min_confidence = Settings().smart_money_min_confidence
+        sent_count = 0
+
+        expired_slugs = [
+            slug
+            for slug, alerted_at in self._alerted_slugs_with_timestamp.items()
+            if now - alerted_at > ttl
+        ]
+        for slug in expired_slugs:
+            del self._alerted_slugs_with_timestamp[slug]
+
+        for signal in signals:
+            if signal["confidence"] < min_confidence:
+                continue
+
+            slug = signal["slug"]
+            if slug in self._alerted_slugs_with_timestamp:
+                logger.debug("Skipping already-alerted signal: %s", slug)
+                continue
+
+            message = self._format_smart_money_alert(signal)
+            await self._send_to_all(message)
+            self._alerted_slugs_with_timestamp[slug] = now
+            sent_count += 1
+
+        return sent_count

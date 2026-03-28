@@ -404,6 +404,64 @@ async def chat_command_handler(
     await _handle_ai_question(update, question)
 
 
+async def smart_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Show recent smart money signals from Polymarket."""
+    chat_id = update.effective_chat.id
+    SUBSCRIBED_CHATS.add(chat_id)
+    await update.message.chat.send_action("typing")
+
+    from src.storage.database import async_session
+    from src.storage.repository import get_recent_smart_signals
+
+    try:
+        async with async_session() as session:
+            signals = await get_recent_smart_signals(
+                session, hours=48, limit=5, min_confidence=0.5
+            )
+
+        if not signals:
+            await update.message.reply_text(
+                "🔮 No smart money signals in the last 48 hours.\n"
+                "Không có tín hiệu smart money trong 48 giờ qua."
+            )
+            return
+
+        for sig in signals:
+            text = _format_smart_signal_card(sig)
+            await update.message.reply_text(text=text)
+    except Exception:
+        logger.exception("Smart money query failed")
+        await update.message.reply_text(
+            "❌ Lỗi khi truy vấn tín hiệu smart money.\n"
+            "Error fetching smart money signals."
+        )
+
+
+def _format_smart_signal_card(sig) -> str:
+    """Format a PolymarketSmartSignal ORM object as a Telegram message card."""
+    arrow = "📈" if sig.move_direction == "up" else "📉"
+    confidence_pct = int(sig.confidence * 100)
+
+    lines = [
+        "🔮 Smart Money Signal",
+        "",
+        f"📌 {sig.title}",
+        f"Category: {sig.category or 'N/A'} | Type: {sig.signal_type}",
+        f"{arrow} {sig.move_cents}¢ move (confidence: {confidence_pct}%)",
+        "",
+        f"📊 Market Consensus: {sig.news_consensus}",
+        f"{sig.news_count_4h} related news articles in last 4 hours",
+        "",
+        f"💡 {sig.reasoning_vn}",
+        "",
+        f"💡 {sig.reasoning_en}",
+        "",
+        "⚠️ Thông tin thị trường, không phải tư vấn đầu tư.",
+        "Market information only, not financial advice.",
+    ]
+    return "\n".join(lines)
+
+
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not update.message or not update.message.text:
         return
@@ -460,6 +518,7 @@ async def start_bot(db_path: str) -> None:
     app.add_handler(CommandHandler("price", price_handler))
     app.add_handler(CommandHandler("history", history_handler))
     app.add_handler(CommandHandler("chat", chat_command_handler))
+    app.add_handler(CommandHandler("smart", smart_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
     _application = app

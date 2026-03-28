@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
@@ -7,6 +8,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from src.config import VNTZ
+from src.engine.smart_money_llm import generate_smart_money_explanation
 from src.storage.database import async_session
 from src.storage.repository import (
     dismiss_signal,
@@ -37,6 +39,9 @@ def _vn_time(value, fmt="%d/%m/%Y %H:%M"):
 
 
 templates.env.filters["vn_time"] = _vn_time
+templates.env.filters["from_json"] = lambda v: (
+    json.loads(v) if isinstance(v, str) else (v or [])
+)
 
 
 @router.get("/partials/fedwatch")
@@ -131,6 +136,38 @@ async def smart_signals_partial(request: Request):
     try:
         async with async_session() as session:
             signals = await get_recent_smart_signals(session, hours=48, limit=20)
+
+            for sig in signals:
+                if sig.llm_explanation_en is None:
+                    try:
+                        explanation = await generate_smart_money_explanation(sig)
+                        if explanation:
+                            parts_en = []
+                            parts_vn = []
+                            if explanation.what_happened.get("en"):
+                                parts_en.append(explanation.what_happened["en"])
+                            if explanation.why_significant.get("en"):
+                                parts_en.append(explanation.why_significant["en"])
+                            if explanation.what_happened.get("vn"):
+                                parts_vn.append(explanation.what_happened["vn"])
+                            if explanation.why_significant.get("vn"):
+                                parts_vn.append(explanation.why_significant["vn"])
+                            if (
+                                explanation.gold_implication
+                                and explanation.gold_implication.get("en")
+                            ):
+                                parts_en.append(explanation.gold_implication["en"])
+                                parts_vn.append(explanation.gold_implication["vn"])
+
+                            sig.llm_explanation_en = "\n\n".join(parts_en)
+                            sig.llm_explanation_vn = "\n\n".join(parts_vn)
+                            sig.llm_generated_at = datetime.now(timezone.utc)
+                            session.add(sig)
+                    except Exception:
+                        pass
+
+            await session.commit()
+
         return templates.TemplateResponse(
             request,
             "partials/polymarket_smart_signals.html",
@@ -154,3 +191,103 @@ async def dismiss_smart_signal(signal_id: int):
     except Exception:
         logger.warning("Dismiss signal failed", exc_info=True)
         return HTMLResponse(content="Error", status_code=500)
+
+
+_backfill_running = False
+
+
+@router.post("/api/admin/polymarket/backfill")
+async def trigger_backfill(days_back: int = 7, fidelity: int = 60):
+    global _backfill_running
+    if _backfill_running:
+        return {"status": "already_running", "message": "Backfill already in progress"}
+
+    if days_back < 1 or days_back > 90:
+        return {"status": "error", "message": "days_back must be between 1 and 90"}
+    if fidelity < 1 or fidelity > 1440:
+        return {"status": "error", "message": "fidelity must be between 1 and 1440"}
+
+    _backfill_running = True
+    return {"status": "started", "days_back": days_back, "fidelity": fidelity}
+
+
+@router.post("/api/admin/polymarket/backfill/run")
+async def run_backfill(days_back: int = 7, fidelity: int = 60):
+    import asyncio
+    import time as _time
+
+    from datetime import timedelta
+
+    from src.ingestion.fetchers.polymarket_clob import (
+        fetch_price_history,
+        fetch_price_history_fallback,
+    )
+    from src.storage.repository import (
+        get_events_with_clob_tokens,
+        save_price_snapshots_backfill,
+    )
+
+    global _backfill_running
+    if _backfill_running:
+        return {"status": "already_running"}
+
+    days_back = max(1, min(days_back, 90))
+    fidelity = max(1, min(fidelity, 1440))
+
+    end_ts = int(_time.time())
+    start_ts = end_ts - (days_back * 86400)
+    total_saved = 0
+
+    try:
+        async with async_session() as session:
+            events = await get_events_with_clob_tokens(session)
+
+        if not events:
+            return {"status": "no_events", "message": "No events with CLOB token IDs"}
+
+        import httpx
+
+        async with httpx.AsyncClient() as client:
+            for event in events:
+                points = await fetch_price_history(
+                    client, event.clob_token_id_yes, start_ts, end_ts, fidelity
+                )
+                if not points:
+                    points = await fetch_price_history_fallback(
+                        client, event.clob_token_id_yes
+                    )
+
+                if points:
+                    snapshots = []
+                    for pt in points:
+                        snapshots.append(
+                            {
+                                "slug": event.slug,
+                                "title": event.title,
+                                "yes_price": pt.p,
+                                "category": event.category,
+                                "fetched_at": datetime.fromtimestamp(
+                                    pt.t, tz=timezone.utc
+                                ),
+                            }
+                        )
+
+                    async with async_session() as session:
+                        count = await save_price_snapshots_backfill(session, snapshots)
+                        await session.commit()
+                        total_saved += count
+
+                    logger.info("Backfilled %d snapshots for %s", count, event.slug)
+
+        return {
+            "status": "completed",
+            "events_processed": len(events),
+            "snapshots_saved": total_saved,
+            "days_back": days_back,
+            "fidelity": fidelity,
+        }
+    except Exception:
+        logger.warning("Backfill failed", exc_info=True)
+        return {"status": "error", "message": "Backfill failed"}
+    finally:
+        _backfill_running = False
