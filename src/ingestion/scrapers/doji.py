@@ -49,6 +49,7 @@ class DojiScraper(DataSource):
             async with httpx.AsyncClient(
                 headers={"User-Agent": USER_AGENT}, timeout=10.0
             ) as client:
+                logger.debug("→ Doji %s", URL)
                 response = await client.get(URL)
                 response.raise_for_status()
         except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:

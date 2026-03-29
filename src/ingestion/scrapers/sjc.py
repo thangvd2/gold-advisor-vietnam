@@ -51,6 +51,7 @@ class SJCScraper(DataSource):
                 },
                 timeout=10.0,
             ) as client:
+                logger.debug("→ SJC %s", URL)
                 response = await client.post(URL)
                 response.raise_for_status()
         except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:

@@ -60,6 +60,8 @@ async def run_gap_backfill(settings) -> dict:
             if latest_ts is None:
                 start_ts = now_ts - default_lookback_seconds
             else:
+                if latest_ts.tzinfo is None:
+                    latest_ts = latest_ts.replace(tzinfo=timezone.utc)
                 gap_seconds = (now - latest_ts).total_seconds()
                 if gap_seconds <= GAP_THRESHOLD_SECONDS:
                     logger.debug(

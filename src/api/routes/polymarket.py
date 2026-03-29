@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from datetime import datetime, timezone
@@ -12,6 +13,7 @@ from src.engine.smart_money_llm import generate_smart_money_explanation
 from src.storage.database import async_session
 from src.storage.repository import (
     dismiss_signal,
+    get_last_polymarket_fetch_time,
     get_latest_fedwatch,
     get_polymarket_events,
     get_recent_smart_signals,
@@ -40,7 +42,7 @@ def _vn_time(value, fmt="%d/%m/%Y %H:%M"):
 
 templates.env.filters["vn_time"] = _vn_time
 templates.env.filters["from_json"] = lambda v: (
-    json.loads(v) if isinstance(v, str) else (v or [])
+    json.loads(v) if isinstance(v, str) and v.strip() else (v or [])
 )
 
 
@@ -131,47 +133,57 @@ async def polymarket_page(request: Request):
     )
 
 
+async def _generate_explanations_background(
+    signals: list,
+) -> None:
+    try:
+        async with async_session() as session:
+            for sig in signals:
+                try:
+                    explanation = await generate_smart_money_explanation(sig)
+                    if explanation:
+                        parts_en = []
+                        parts_vn = []
+                        if explanation.what_happened.get("en"):
+                            parts_en.append(explanation.what_happened["en"])
+                        if explanation.why_significant.get("en"):
+                            parts_en.append(explanation.why_significant["en"])
+                        if explanation.what_happened.get("vn"):
+                            parts_vn.append(explanation.what_happened["vn"])
+                        if explanation.why_significant.get("vn"):
+                            parts_vn.append(explanation.why_significant["vn"])
+                        if (
+                            explanation.gold_implication
+                            and explanation.gold_implication.get("en")
+                        ):
+                            parts_en.append(explanation.gold_implication["en"])
+                            parts_vn.append(explanation.gold_implication["vn"])
+
+                        sig.llm_explanation_en = "\n\n".join(parts_en)
+                        sig.llm_explanation_vn = "\n\n".join(parts_vn)
+                        sig.llm_generated_at = datetime.now(timezone.utc)
+                        session.add(sig)
+                except Exception:
+                    pass
+            await session.commit()
+    except Exception:
+        logger.warning("Background explanation generation failed", exc_info=True)
+
+
 @router.get("/partials/polymarket/smart-signals")
 async def smart_signals_partial(request: Request):
     try:
         async with async_session() as session:
             signals = await get_recent_smart_signals(session, hours=48, limit=20)
-
-            for sig in signals:
-                if sig.llm_explanation_en is None:
-                    try:
-                        explanation = await generate_smart_money_explanation(sig)
-                        if explanation:
-                            parts_en = []
-                            parts_vn = []
-                            if explanation.what_happened.get("en"):
-                                parts_en.append(explanation.what_happened["en"])
-                            if explanation.why_significant.get("en"):
-                                parts_en.append(explanation.why_significant["en"])
-                            if explanation.what_happened.get("vn"):
-                                parts_vn.append(explanation.what_happened["vn"])
-                            if explanation.why_significant.get("vn"):
-                                parts_vn.append(explanation.why_significant["vn"])
-                            if (
-                                explanation.gold_implication
-                                and explanation.gold_implication.get("en")
-                            ):
-                                parts_en.append(explanation.gold_implication["en"])
-                                parts_vn.append(explanation.gold_implication["vn"])
-
-                            sig.llm_explanation_en = "\n\n".join(parts_en)
-                            sig.llm_explanation_vn = "\n\n".join(parts_vn)
-                            sig.llm_generated_at = datetime.now(timezone.utc)
-                            session.add(sig)
-                    except Exception:
-                        pass
-
-            await session.commit()
+            last_checked = await get_last_polymarket_fetch_time(session)
+            uncached = [s for s in signals if s.llm_explanation_en is None]
+            if uncached:
+                asyncio.create_task(_generate_explanations_background(uncached))
 
         return templates.TemplateResponse(
             request,
             "partials/polymarket_smart_signals.html",
-            context={"signals": signals},
+            context={"signals": signals, "last_checked": last_checked},
         )
     except Exception:
         logger.warning("Smart signals partial failed", exc_info=True)

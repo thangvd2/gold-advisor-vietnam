@@ -9,10 +9,19 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-logging.getLogger("agentscope.formatter._openai_formatter").setLevel(logging.ERROR)
-
 from src.api.routes.health import router as health_router, set_app_state
-from src.config import VNTZ
+from src.config import Settings, VNTZ
+
+logging.basicConfig(
+    level=logging.WARNING,
+    format="%(asctime)s %(levelname)-5s %(name)s  %(message)s",
+    datefmt="%H:%M:%S",
+)
+# Our app code logs at LOG_LEVEL; third-party stays at WARNING or above
+if Settings().log_level.upper() == "DEBUG":
+    for name in ["src", "apscheduler"]:
+        logging.getLogger(name).setLevel(logging.DEBUG)
+logging.getLogger("agentscope.formatter._openai_formatter").setLevel(logging.ERROR)
 from src.api.routes.quality import router as quality_router
 from src.api.routes.gap import router as gap_router
 from src.api.routes.prices import router as prices_router
@@ -22,7 +31,6 @@ from src.api.routes.admin import router as admin_router
 from src.api.routes.news import router as news_router
 from src.api.routes.chat import router as chat_router
 from src.api.routes.polymarket import router as polymarket_router
-from src.config import Settings
 from src.ingestion.fetchers.dxy import DXYFetcher
 from src.ingestion.fetchers.gold_price import YFinanceGoldFetcher
 from src.ingestion.fetchers.vietcombank import VietcombankFxRateFetcher
@@ -32,6 +40,7 @@ from src.ingestion.scrapers.sjc import SJCScraper
 from src.ingestion.scrapers.pnj import PNJScraper
 from src.ingestion.scrapers.btmc import BTMCScraper
 from src.ingestion.scrapers.kimphat import KimPhatScraper
+from src.ingestion.scrapers.kimkhanh import KimKhanhLocalScraper, KimKhanhDealerScraper
 from src.ingestion.scheduler import start_scheduler, stop_scheduler
 from src.alerts.bot import start_bot, stop_bot
 from src.storage.database import init_db, async_session
@@ -55,7 +64,7 @@ def _vn_time(value, fmt="%d/%m/%Y %H:%M"):
 
 templates.env.filters["vn_time"] = _vn_time
 templates.env.filters["from_json"] = lambda v: (
-    json.loads(v) if isinstance(v, str) else (v or [])
+    json.loads(v) if isinstance(v, str) and v.strip() else (v or [])
 )
 
 app_state: dict = {}
@@ -75,7 +84,18 @@ async def lifespan(app: FastAPI):
     pnj = PNJScraper()
     btmc = BTMCScraper()
     kimphat = KimPhatScraper()
-    vn_scrapers = [doji, phuquy, sjc, pnj, btmc, kimphat]
+    kimkhanh_local = KimKhanhLocalScraper()
+    kimkhanh_dealer = KimKhanhDealerScraper()
+    vn_scrapers = [
+        doji,
+        phuquy,
+        sjc,
+        pnj,
+        btmc,
+        kimphat,
+        kimkhanh_dealer,
+        kimkhanh_local,
+    ]
     sources = [gold_fetcher, dxy_fetcher] + vn_scrapers
 
     start_scheduler(app_state, sources, fx_fetcher, settings)

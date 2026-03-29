@@ -19,6 +19,7 @@ class DXYFetcher(DataSource):
     async def fetch(self) -> list[FetchedPrice]:
         for ticker_symbol in [DXY_TICKER, DXY_FALLBACK]:
             try:
+                logger.debug("→ yfinance %s", ticker_symbol)
                 ticker = yf.Ticker(ticker_symbol)
                 price = ticker.fast_info.last_price
 

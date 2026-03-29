@@ -12,8 +12,19 @@
       </div>
       {% if signals %}
       <span class="text-xs text-charcoal-400">
-        <span data-lang="en">Last</span><span data-lang="vn">Cập nhật</span>:
+        <span data-lang="en">Detected</span><span data-lang="vn">Phát hiện lúc</span>:
         {{ signals[0].detected_at | vn_time if signals[0].detected_at else "—" }}
+      </span>
+      {% elif last_checked %}
+      <span class="text-xs text-charcoal-400">
+        <span data-lang="en">Last checked</span><span data-lang="vn">Kiểm tra lúc</span>:
+        {{ last_checked | vn_time }}
+      </span>
+      {% endif %}
+      {% if signals and last_checked %}
+      <span class="text-xs text-charcoal-400 ml-2">
+        <span data-lang="en">Checked</span><span data-lang="vn">Kiểm tra lúc</span>:
+        {{ last_checked | vn_time }}
       </span>
       {% endif %}
     </div>

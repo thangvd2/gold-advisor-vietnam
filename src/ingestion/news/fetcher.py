@@ -19,6 +19,7 @@ class NewsFetcher:
         url = feed["url"]
         source = feed.get("source", url)
         try:
+            logger.debug("→ News %s", source)
             resp = await client.get(url, timeout=15.0)
             resp.raise_for_status()
             return parse_rss_feed(resp.content, source)

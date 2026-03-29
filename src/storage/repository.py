@@ -496,6 +496,13 @@ async def get_recent_smart_signals(
     return list(result.scalars().all())
 
 
+async def get_last_polymarket_fetch_time(session: AsyncSession) -> datetime | None:
+    """Return the most recent fetched_at from polymarket_price_snapshots."""
+    stmt = select(func.max(PolymarketPriceSnapshot.fetched_at))
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
 async def dismiss_signal(session: AsyncSession, signal_id: int) -> None:
     from sqlalchemy import update
 

@@ -51,7 +51,7 @@ def _parse_timestamp(text: str) -> datetime | None:
 class KimPhatScraper(DataSource):
     @property
     def source_name(self) -> str:
-        return "local"
+        return "kimphat"
 
     @retry(max_retries=2, backoff_factor=1.0)
     async def fetch(self) -> list[FetchedPrice]:
@@ -60,6 +60,7 @@ class KimPhatScraper(DataSource):
                 headers={"User-Agent": USER_AGENT},
                 timeout=10.0,
             ) as client:
+                logger.debug("→ Kim Phát %s", URL)
                 response = await client.get(URL)
                 response.raise_for_status()
         except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:
@@ -121,7 +122,7 @@ class KimPhatScraper(DataSource):
 
             return [
                 FetchedPrice(
-                    source="local",
+                    source="kimphat",
                     product_type="ring_gold",
                     buy_price=buy_per_luong,
                     sell_price=sell_per_luong,

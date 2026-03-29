@@ -54,6 +54,7 @@ class PhuQuyScraper(DataSource):
             async with httpx.AsyncClient(
                 headers={"User-Agent": USER_AGENT}, timeout=10.0
             ) as client:
+                logger.debug("→ Phú Quý %s", URL)
                 response = await client.get(URL)
                 response.raise_for_status()
         except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:

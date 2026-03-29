@@ -54,6 +54,7 @@ class PNJScraper(DataSource):
                 },
                 timeout=10.0,
             ) as client:
+                logger.debug("→ PNJ %s", URL)
                 response = await client.get(URL)
                 response.raise_for_status()
         except (httpx.TimeoutException, httpx.HTTPStatusError) as exc:

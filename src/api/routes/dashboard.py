@@ -41,7 +41,7 @@ def _vn_time(value, fmt="%d/%m/%Y %H:%M"):
 
 templates.env.filters["vn_time"] = _vn_time
 templates.env.filters["from_json"] = lambda v: (
-    json.loads(v) if isinstance(v, str) else (v or [])
+    json.loads(v) if isinstance(v, str) and v.strip() else (v or [])
 )
 
 

@@ -107,6 +107,7 @@ class BTMCScraper(DataSource):
                 headers={"User-Agent": USER_AGENT},
                 timeout=10.0,
             ) as client:
+                logger.debug("→ BTMC %s", URL)
                 response = await client.get(URL)
                 response.raise_for_status()
         except (

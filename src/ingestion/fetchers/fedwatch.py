@@ -23,6 +23,7 @@ class FedWatchFetcher:
             return None
 
     def _get_zq_price(self) -> dict | None:
+        logger.debug("→ yfinance ZQ=F")
         ticker = yf.Ticker("ZQ=F")
         hist = ticker.history(period="5d")
         if hist.empty:

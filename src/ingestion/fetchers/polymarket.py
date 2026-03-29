@@ -108,6 +108,7 @@ class PolymarketFetcher:
         return [self._extract_event_fields(e) for e in filtered]
 
     async def _fetch_active_events(self) -> list[dict]:
+        logger.debug("→ Polymarket Gamma /events")
         resp = await self.client.get(
             GAMMA_API_EVENTS,
             params={"limit": 100, "closed": "false"},  # NOT active=True
@@ -117,6 +118,7 @@ class PolymarketFetcher:
 
     async def _search_events(self, query: str) -> list[dict]:
         try:
+            logger.debug("→ Polymarket Gamma /search?q=%s", query)
             resp = await self.client.get(
                 GAMMA_API_SEARCH,
                 params={"q": query, "limit_per_type": 20},

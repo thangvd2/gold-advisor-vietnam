@@ -50,6 +50,12 @@ async def fetch_price_history(
         current_end = min(current_start + CHUNK_SECONDS, end_ts)
 
         try:
+            logger.debug(
+                "→ Polymarket CLOB /prices-history %s [%d→%d]",
+                token_id[:12],
+                current_start,
+                current_end,
+            )
             resp = await client.get(
                 CLOB_PRICES_URL,
                 params={
@@ -106,8 +112,8 @@ async def fetch_price_history_fallback(
 ) -> list[PricePoint]:
     """Fallback to Data API /trades for resolved markets where prices-history is empty."""
     try:
+        logger.debug("→ Polymarket CLOB /data/trades %s (fallback)", token_id[:12])
         resp = await client.get(
-            CLOB_DATA_URL,
             params={"asset": token_id, "limit": 100},
             timeout=30.0,
         )

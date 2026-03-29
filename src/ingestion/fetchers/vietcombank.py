@@ -18,6 +18,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
 def _fetch_yfinance_fallback() -> float | None:
     import yfinance as yf
 
+    logger.debug("→ yfinance USDVND=X (fallback)")
     ticker = yf.Ticker("USDVND=X")
     price = ticker.fast_info.last_price
     return price if price and price > 0 else None
@@ -30,6 +31,7 @@ class VietcombankFxRateFetcher(FxRateFetcher):
 
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
+                logger.debug("→ Vietcombank %s", PRIMARY_URL)
                 response = await client.get(
                     PRIMARY_URL,
                     headers={"User-Agent": USER_AGENT},

@@ -231,6 +231,7 @@ async def generate_smart_money_explanation(
             base_url=settings.openai_base_url,
         )
 
+        logger.debug("→ LLM smart money explanation (%s)", settings.openai_model_name)
         response = await client.chat.completions.create(
             model=settings.openai_model_name,
             messages=[

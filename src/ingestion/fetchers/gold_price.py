@@ -36,6 +36,7 @@ class YFinanceGoldFetcher(DataSource):
         return []
 
     def _get_yf_price(self, ticker_symbol: str) -> list[FetchedPrice]:
+        logger.debug("→ yfinance %s", ticker_symbol)
         ticker = yf.Ticker(ticker_symbol)
         fast_info = ticker.fast_info
         price = fast_info.last_price

@@ -356,6 +356,7 @@ async def generate_llm_report(
             base_url=settings.openai_base_url,
         )
 
+        logger.debug("→ LLM signal report (%s)", settings.openai_model_name)
         response = await client.chat.completions.create(
             model=settings.openai_model_name,
             messages=[
