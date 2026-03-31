@@ -136,8 +136,8 @@ You MUST return valid JSON with EXACTLY these top-level keys:
 Example output:
 {
   "what_happened": {
-    "en": "The probability jumped from 45¢ to 62¢ in 4 hours...",
-    "vn": "Xác suất tăng từ 45 xu lên 62 xu trong 4 giờ..."
+    "en": "The probability jumped from 45% to 62% in 4 hours...",
+    "vn": "Xác suất tăng từ 45% lên 62% trong 4 giờ..."
   },
   "why_significant": {
     "en": "This move contradicts the bearish news narrative...",

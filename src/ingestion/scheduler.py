@@ -278,7 +278,7 @@ def _polymarket_sync(settings):
                                     continue
                                 await save_smart_signal(session, sig)
                                 logger.info(
-                                    "Smart money signal: %s (%s) — %s, %.1f¢ %s",
+                                    "Smart money signal: %s (%s) — %s, %.1f%% %s",
                                     sig["title"][:40],
                                     sig["signal_type"],
                                     sig["confidence"],

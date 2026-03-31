@@ -38,7 +38,7 @@ class TestFormatSmartMoneyAlert:
         signal = _make_signal(move_direction="up", move_cents=5.0)
         text = dispatcher._format_smart_money_alert(signal)
         assert "📈" in text
-        assert "5.0¢" in text
+        assert "5.0%" in text
         assert "Test Event" in text
 
     def test_down_direction(self):
@@ -46,7 +46,7 @@ class TestFormatSmartMoneyAlert:
         signal = _make_signal(move_direction="down", move_cents=8.0)
         text = dispatcher._format_smart_money_alert(signal)
         assert "📉" in text
-        assert "8.0¢" in text
+        assert "8.0%" in text
 
     def test_contains_bilingual_reasoning(self):
         dispatcher = AlertDispatcher()
@@ -155,7 +155,7 @@ class TestFormatSmartSignalCard:
         text = _format_smart_signal_card(sig)
         assert "Fed Decision" in text
         assert "📈" in text
-        assert "7.0¢" in text
+        assert "7.0%" in text
         assert "80%" in text
         assert "Tín hiệu ngược" in text
 
@@ -176,4 +176,4 @@ class TestFormatSmartSignalCard:
 
         text = _format_smart_signal_card(sig)
         assert "📉" in text
-        assert "4.0¢" in text
+        assert "4.0%" in text

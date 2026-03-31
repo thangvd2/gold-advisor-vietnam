@@ -288,20 +288,20 @@ def build_reasoning(signal: dict) -> tuple[str, str]:
 
     if signal_type == "contrarian":
         en = (
-            f"Price moved {direction} {move_cents:.1f}¢ while {news_count} "
+            f"Probability moved {direction} {move_cents:.1f}% while {news_count} "
             f"news article(s) suggested the opposite direction. {volume_note}"
         ).strip()
         vn = (
-            f"Giá {direction_vn} {move_cents:.1f}¢ trong khi {news_count} "
+            f"Xác suất {direction_vn} {move_cents:.1f}% trong khi {news_count} "
             f"bài báo cho xu hướng ngược lại. {volume_note_vn}"
         ).strip()
     else:
         en = (
-            f"Price moved {direction} {move_cents:.1f}¢ with no related news "
+            f"Probability moved {direction} {move_cents:.1f}% with no related news "
             f"in the past 4 hours. {volume_note}"
         ).strip()
         vn = (
-            f"Giá {direction_vn} {move_cents:.1f}¢ mà không có tin tức liên quan "
+            f"Xác suất {direction_vn} {move_cents:.1f}% mà không có tin tức liên quan "
             f"trong 4 giờ qua. {volume_note_vn}"
         ).strip()
 

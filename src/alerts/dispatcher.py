@@ -124,7 +124,7 @@ class AlertDispatcher:
             "",
             f"📌 {signal['title']}",
             f"Category: {signal.get('category', 'N/A')} | Type: {signal['signal_type']} (contrarian/no_news)",
-            f"{arrow} {move_cents}¢ move (confidence: {confidence_pct}%)",
+            f"{arrow} {move_cents}% move (confidence: {confidence_pct}%)",
             "",
             f"📊 Market Consensus: {signal.get('news_consensus', 'N/A')}",
             f"{signal.get('news_count_4h', 0)} related news articles in last 4 hours",

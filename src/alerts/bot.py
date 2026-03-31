@@ -447,7 +447,7 @@ def _format_smart_signal_card(sig) -> str:
         "",
         f"📌 {sig.title}",
         f"Category: {sig.category or 'N/A'} | Type: {sig.signal_type}",
-        f"{arrow} {sig.move_cents}¢ move (confidence: {confidence_pct}%)",
+        f"{arrow} {sig.move_cents}% move (confidence: {confidence_pct}%)",
         "",
         f"📊 Market Consensus: {sig.news_consensus}",
         f"{sig.news_count_4h} related news articles in last 4 hours",

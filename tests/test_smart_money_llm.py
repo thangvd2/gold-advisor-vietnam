@@ -26,12 +26,12 @@ class TestSmartMoneyExplanationModel:
     def test_model_with_valid_data(self):
         """Test SmartMoneyExplanation model with all fields."""
         explanation = SmartMoneyExplanation(
-            what_happened={"en": "Price moved up 5¢", "vn": "Giá tăng 5 xu"},
+            what_happened={"en": "Price moved up 5%", "vn": "Giá tăng 5%"},
             why_significant={"en": "Contrary to news", "vn": "Trái ngược tin tức"},
             gold_implication={"en": "Gold may rise", "vn": "Vàng có thể tăng"},
         )
-        assert explanation.what_happened["en"] == "Price moved up 5¢"
-        assert explanation.what_happened["vn"] == "Giá tăng 5 xu"
+        assert explanation.what_happened["en"] == "Price moved up 5%"
+        assert explanation.what_happened["vn"] == "Giá tăng 5%"
         assert explanation.why_significant["en"] == "Contrary to news"
         assert explanation.why_significant["vn"] == "Trái ngược tin tức"
         assert explanation.gold_implication is not None
@@ -41,12 +41,12 @@ class TestSmartMoneyExplanationModel:
     def test_model_without_gold_implication(self):
         """Test SmartMoneyExplanation model without optional gold_implication."""
         explanation = SmartMoneyExplanation(
-            what_happened={"en": "Price moved up 5¢", "vn": "Giá tăng 5 xu"},
+            what_happened={"en": "Price moved up 5%", "vn": "Giá tăng 5%"},
             why_significant={"en": "Contrary to news", "vn": "Trái ngược tin tức"},
         )
         assert explanation.gold_implication is None
 
-        assert explanation.what_happened["en"] == "Price moved up 5¢"
+        assert explanation.what_happened["en"] == "Price moved up 5%"
         assert explanation.why_significant["en"] == "Contrary to news"
 
 
@@ -84,8 +84,8 @@ class TestGenerateSmartMoneyExplanation:
         mock_response.choices[0].message.content = """
 {
     "what_happened": {
-        "en": "The probability of a Fed rate cut in June jumped from 45¢ to 65¢, representing a significant shift in market expectations.",
-        "vn": "Xác suất cắt lãi suất liên quan đến Fed vào tháng 6 đã tăng từ 45 xu lên 65 xu, cho thấy sự thay đổi đáng kể trọng kỳ kỳ kỳ kỳ kỳ kỳ kỳ thị thị biểu kỳ thị trường."
+        "en": "The probability of a Fed rate cut in June jumped from 45% to 65%, representing a significant shift in market expectations.",
+        "vn": "Xác suất cắt lãi suất liên quan đến Fed vào tháng 6 đã tăng từ 45% lên 65%, cho thấy sự thay đổi đáng kể trọng kỳ kỳ kỳ kỳ kỳ kỳ kỳ thị thị biểu kỳ thị trường."
     },
     "why_significant": {
         "en": "This move contradicts recent news suggesting rates will stay higher, suggesting informed traders are betting against the consensus.",
@@ -123,7 +123,7 @@ class TestGenerateSmartMoneyExplanation:
             assert isinstance(result, SmartMoneyExplanation)
             assert (
                 result.what_happened["en"]
-                == "The probability of a Fed rate cut in June jumped from 45¢ to 65¢, representing a significant shift in market expectations."
+                == "The probability of a Fed rate cut in June jumped from 45% to 65%, representing a significant shift in market expectations."
             )
             assert (
                 result.why_significant["vn"]
@@ -236,8 +236,8 @@ class TestGenerateSmartMoneyExplanation:
         mock_response.choices[0].message.content = """
 {
     "what_happened": {
-        "en": "Price moved up 5¢",
-        "vn": "Giá tăng 5 xu"
+        "en": "Price moved up 5%",
+        "vn": "Giá tăng 5%"
     },
     "why_significant": {
         "en": "Contrary to news",
