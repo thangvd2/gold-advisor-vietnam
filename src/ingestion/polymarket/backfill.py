@@ -22,6 +22,7 @@ async def run_gap_backfill(settings) -> dict:
         get_latest_snapshot_ts_per_slug,
         get_previous_snapshots,
         get_recent_news,
+        has_similar_signal,
         save_price_snapshots_backfill,
         save_smart_signal,
     )
@@ -168,6 +169,20 @@ async def run_gap_backfill(settings) -> dict:
 
         for sig in signals:
             async with async_session() as session:
+                is_dup = await has_similar_signal(
+                    session,
+                    sig["slug"],
+                    sig["move_direction"],
+                    sig["signal_type"],
+                )
+                if is_dup:
+                    logger.debug(
+                        "Skipping duplicate backfill signal: %s (%s)",
+                        sig["title"][:40],
+                        sig["signal_type"],
+                    )
+                    await session.commit()
+                    continue
                 await save_smart_signal(session, sig)
                 await session.commit()
 
