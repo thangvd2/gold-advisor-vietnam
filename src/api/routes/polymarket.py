@@ -1,7 +1,8 @@
 import asyncio
 import json
 import logging
-from datetime import datetime, timezone
+import math
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -17,6 +18,7 @@ from src.storage.repository import (
     get_latest_fedwatch,
     get_polymarket_events,
     get_recent_smart_signals,
+    get_yesterday_volumes,
 )
 
 logger = logging.getLogger(__name__)
@@ -44,6 +46,41 @@ templates.env.filters["vn_time"] = _vn_time
 templates.env.filters["from_json"] = lambda v: (
     json.loads(v) if isinstance(v, str) and v.strip() else (v or [])
 )
+
+
+async def _enrich_events_with_volume_ratio(events: list) -> list:
+    yesterday_str = (datetime.now(timezone.utc) - timedelta(days=1)).strftime(
+        "%Y-%m-%d"
+    )
+    async with async_session() as session:
+        yesterday_vols = await get_yesterday_volumes(session, yesterday_str)
+
+    for event in events:
+        mq_raw = getattr(event, "market_questions", None)
+        if not mq_raw:
+            continue
+        try:
+            mq = json.loads(mq_raw) if isinstance(mq_raw, str) else mq_raw
+        except (ValueError, TypeError):
+            continue
+        for m in mq:
+            token_id = m.get("t")
+            if not token_id:
+                continue
+            yesterday_vol = yesterday_vols.get(token_id)
+            today_vol = m.get("v", 0.0)
+            if yesterday_vol and yesterday_vol > 0:
+                m["vr"] = round(today_vol / yesterday_vol, 2)
+            else:
+                m["vr"] = None
+            day_change = m.get("d")
+            vr = m["vr"]
+            if day_change is not None and vr is not None and vr > 0:
+                m["score"] = round(abs(day_change) * math.log(max(vr, 0.01)), 2)
+            else:
+                m["score"] = None
+        event.market_questions = json.dumps(mq, ensure_ascii=False)
+    return events
 
 
 @router.get("/partials/fedwatch")
@@ -79,6 +116,7 @@ async def polymarket_partial(request: Request):
             gold_macro = await get_polymarket_events(
                 session, event_type="gold_macro", limit=10
             )
+        gold_macro = await _enrich_events_with_volume_ratio(gold_macro)
         fetched_at = None
         if gold_macro and gold_macro[0].fetched_at:
             fetched_at = gold_macro[0].fetched_at
@@ -105,6 +143,7 @@ async def market_movers_partial(request: Request):
             market_movers = await get_polymarket_events(
                 session, event_type="market_mover", limit=20
             )
+        market_movers = await _enrich_events_with_volume_ratio(market_movers)
         fetched_at = None
         if market_movers and market_movers[0].fetched_at:
             fetched_at = market_movers[0].fetched_at

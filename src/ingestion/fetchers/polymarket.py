@@ -260,7 +260,38 @@ class PolymarketFetcher:
                         yes_price = round(float(prices[0]) * 100, 1)
                     except (ValueError, TypeError):
                         pass
-                items.append({"q": q, "p": yes_price})
+                m_day_change = None
+                raw_dc = m.get("oneDayPriceChange")
+                if raw_dc is not None:
+                    try:
+                        m_day_change = round(float(raw_dc) * 100, 1)
+                    except (ValueError, TypeError):
+                        pass
+                m_vol = 0.0
+                vol_str = m.get("volume24hr") or m.get("volumeNum", "0")
+                try:
+                    m_vol = float(vol_str) if vol_str else 0.0
+                except (ValueError, TypeError):
+                    pass
+                m_token_id = None
+                raw_tids = m.get("clobTokenIds", "[]")
+                try:
+                    tids = (
+                        json.loads(raw_tids) if isinstance(raw_tids, str) else raw_tids
+                    )
+                    if isinstance(tids, list) and len(tids) >= 1:
+                        m_token_id = tids[0]
+                except (ValueError, TypeError):
+                    pass
+                items.append(
+                    {
+                        "q": q,
+                        "p": yes_price,
+                        "d": m_day_change,
+                        "v": round(m_vol, 2),
+                        "t": m_token_id,
+                    }
+                )
             if items:
                 market_questions = json.dumps(items, ensure_ascii=False)
 

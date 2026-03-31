@@ -1,6 +1,16 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, func, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    func,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -208,4 +218,23 @@ class PolymarketSmartSignal(Base):
         Index("idx_pm_signal_slug", "slug"),
         Index("idx_pm_signal_detected", "detected_at"),
         Index("idx_pm_signal_dismissed", "is_dismissed"),
+    )
+
+
+class PolymarketVolumeSnapshot(Base):
+    __tablename__ = "polymarket_volume_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(200))
+    market_token_id: Mapped[str] = mapped_column(String(200))
+    market_question: Mapped[str] = mapped_column(String(500))
+    volume_24h: Mapped[float] = mapped_column(Float)
+    snapshot_date: Mapped[str] = mapped_column(String(10))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+    __table_args__ = (
+        Index("idx_pm_vol_unique", "market_token_id", "snapshot_date", unique=True),
+        Index("idx_pm_vol_slug", "slug"),
     )

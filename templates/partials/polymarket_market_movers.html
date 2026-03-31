@@ -35,10 +35,36 @@
               <div class="border-t border-charcoal-600/50 pt-2">
                 <p class="font-semibold text-gold-400/80 mb-1"><span data-lang="en">Markets</span><span data-lang="vn">Thị trường</span></p>
                 {% for m in event.market_questions | from_json %}
-                <div class="flex items-center gap-2 mb-0.5">
-                  <span class="text-charcoal-300 flex-1">• {{ m.q }}</span>
+                <div class="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                  <span class="text-charcoal-300 flex-1 min-w-0">• {{ m.q }}</span>
                   {% if m.p is not none %}
                   <span class="font-mono text-gold-400/90 shrink-0">{{ m.p }}%</span>
+                  {% endif %}
+                  {% set dc = m.get("d") %}
+                  {% if dc is not none %}
+                    {% if dc > 0 %}
+                  <span class="font-mono text-xs text-amber-400 shrink-0">(+{{ dc }}%)</span>
+                    {% elif dc < 0 %}
+                  <span class="font-mono text-xs text-emerald-400 shrink-0">({{ dc }}%)</span>
+                    {% else %}
+                  <span class="font-mono text-xs text-charcoal-500 shrink-0">(0.0%)</span>
+                    {% endif %}
+                  {% endif %}
+                  {% set vr = m.get("vr") %}
+                  {% if vr is not none %}
+                    {% if dc is not none and vr >= 1.0 %}
+                      {% if dc > 0 %}
+                  <span class="text-xs shrink-0" title="Strong conviction: price up, volume up">&#x1F525;{{ "%.1fx"|format(vr) }}</span>
+                      {% else %}
+                  <span class="text-xs shrink-0" title="Strong selloff: price down, volume up">&#x1F4A5;{{ "%.1fx"|format(vr) }}</span>
+                      {% endif %}
+                    {% elif dc is not none and vr < 1.0 and vr > 0 %}
+                      {% if dc > 0 %}
+                  <span class="text-xs shrink-0 text-charcoal-500" title="Weak rally: price up, volume down">&#x1F914;{{ "%.1fx"|format(vr) }}</span>
+                      {% else %}
+                  <span class="text-xs shrink-0 text-charcoal-500" title="Quiet drift: price down, volume down">&#x1F634;{{ "%.1fx"|format(vr) }}</span>
+                      {% endif %}
+                    {% endif %}
                   {% endif %}
                 </div>
                 {% endfor %}

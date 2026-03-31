@@ -1,7 +1,7 @@
 """CRUD operations for price_history, data_quality_alerts, and signal_history tables."""
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,7 @@ from src.storage.models import (
     PolymarketEvent,
     PolymarketPriceSnapshot,
     PolymarketSmartSignal,
+    PolymarketVolumeSnapshot,
     PriceRecord,
     SignalRecord,
 )
@@ -448,6 +449,29 @@ async def get_latest_snapshot_ts_per_slug(
     return {row.slug: row.max_fa for row in result.all()}
 
 
+async def has_similar_signal(
+    session: AsyncSession,
+    slug: str,
+    move_direction: str,
+    signal_type: str,
+    hours: float = 2.0,
+) -> bool:
+    """Prevents duplicate signals — the 1-hour lookback causes same move to be detected 2-4x."""
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    stmt = (
+        select(func.count())
+        .select_from(PolymarketSmartSignal)
+        .where(
+            PolymarketSmartSignal.slug == slug,
+            PolymarketSmartSignal.move_direction == move_direction,
+            PolymarketSmartSignal.signal_type == signal_type,
+            PolymarketSmartSignal.detected_at >= cutoff,
+        )
+    )
+    result = await session.execute(stmt)
+    return (result.scalar_one() or 0) > 0
+
+
 async def save_smart_signal(
     session: AsyncSession, signal: dict
 ) -> PolymarketSmartSignal:
@@ -513,3 +537,41 @@ async def dismiss_signal(session: AsyncSession, signal_id: int) -> None:
     )
     await session.execute(stmt)
     await session.flush()
+
+
+async def save_volume_snapshots(session: AsyncSession, snapshots: list[dict]) -> int:
+    from datetime import date
+
+    from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
+    saved = 0
+    for s in snapshots:
+        stmt = (
+            sqlite_insert(PolymarketVolumeSnapshot)
+            .values(
+                slug=s["slug"],
+                market_token_id=s["market_token_id"],
+                market_question=s["market_question"],
+                volume_24h=s["volume_24h"],
+                snapshot_date=s["snapshot_date"],
+            )
+            .on_conflict_do_update(
+                index_elements=["market_token_id", "snapshot_date"],
+                set_={"volume_24h": s["volume_24h"]},
+            )
+        )
+        await session.execute(stmt)
+        saved += 1
+    await session.flush()
+    return saved
+
+
+async def get_yesterday_volumes(
+    session: AsyncSession, snapshot_date: str
+) -> dict[str, float]:
+    stmt = select(
+        PolymarketVolumeSnapshot.market_token_id,
+        PolymarketVolumeSnapshot.volume_24h,
+    ).where(PolymarketVolumeSnapshot.snapshot_date == snapshot_date)
+    result = await session.execute(stmt)
+    return {row.market_token_id: row.volume_24h for row in result.all()}

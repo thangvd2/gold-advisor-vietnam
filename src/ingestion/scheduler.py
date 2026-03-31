@@ -111,6 +111,7 @@ def _fedwatch_sync(settings):
 
 def _polymarket_sync(settings):
     import json
+    from datetime import datetime, timezone
 
     from src.ingestion.fetchers.polymarket import PolymarketFetcher
     from src.ingestion.polymarket.monitor import flag_significant_moves
@@ -118,9 +119,11 @@ def _polymarket_sync(settings):
     from src.storage.repository import (
         get_previous_snapshots,
         get_recent_news,
+        has_similar_signal,
         save_polymarket_events,
         save_price_snapshots,
         save_smart_signal,
+        save_volume_snapshots,
     )
 
     fetcher = PolymarketFetcher()
@@ -174,7 +177,10 @@ def _polymarket_sync(settings):
                     }
                 )
 
+            detected_signals: list = []
+
             async def _save():
+                nonlocal detected_signals
                 async with async_session() as session:
                     count = await save_polymarket_events(session, all_events)
                     logger.info(
@@ -185,7 +191,37 @@ def _polymarket_sync(settings):
                         sum(1 for e in all_events if e.get("is_flagged")),
                     )
 
-                    detected_signals = []
+                    vol_snaps = []
+                    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+                    for e in all_events:
+                        mq_raw = e.get("market_questions")
+                        if not mq_raw:
+                            continue
+                        try:
+                            mq = (
+                                json.loads(mq_raw)
+                                if isinstance(mq_raw, str)
+                                else mq_raw
+                            )
+                        except (ValueError, TypeError):
+                            continue
+                        for m in mq:
+                            token_id = m.get("t")
+                            if not token_id:
+                                continue
+                            vol_snaps.append(
+                                {
+                                    "slug": e["slug"],
+                                    "market_token_id": token_id,
+                                    "market_question": m.get("q", ""),
+                                    "volume_24h": m.get("v", 0.0),
+                                    "snapshot_date": today_str,
+                                }
+                            )
+                    if vol_snaps:
+                        vol_count = await save_volume_snapshots(session, vol_snaps)
+                        logger.info("Polymarket: saved %d volume snapshots", vol_count)
+
                     if snapshots:
                         snap_count = await save_price_snapshots(session, snapshots)
                         logger.info("Polymarket: saved %d price snapshots", snap_count)
@@ -227,6 +263,19 @@ def _polymarket_sync(settings):
                                 new_snap_dicts, prev_snap_dicts, recent_news
                             )
                             for sig in detected_signals:
+                                is_dup = await has_similar_signal(
+                                    session,
+                                    sig["slug"],
+                                    sig["move_direction"],
+                                    sig["signal_type"],
+                                )
+                                if is_dup:
+                                    logger.debug(
+                                        "Skipping duplicate signal: %s (%s)",
+                                        sig["title"][:40],
+                                        sig["signal_type"],
+                                    )
+                                    continue
                                 await save_smart_signal(session, sig)
                                 logger.info(
                                     "Smart money signal: %s (%s) — %s, %.1f¢ %s",
@@ -239,21 +288,21 @@ def _polymarket_sync(settings):
 
                     await session.commit()
 
-                    if detected_signals:
-                        dispatcher = _get_polymarket_dispatcher()
-                        loop3 = asyncio.new_event_loop()
-                        try:
-                            loop3.run_until_complete(
-                                dispatcher.dispatch_smart_money_alerts(detected_signals)
-                            )
-                        finally:
-                            loop3.close()
-
             loop2 = asyncio.new_event_loop()
             try:
                 loop2.run_until_complete(_save())
             finally:
                 loop2.close()
+
+            if detected_signals:
+                dispatcher = _get_polymarket_dispatcher()
+                loop3 = asyncio.new_event_loop()
+                try:
+                    loop3.run_until_complete(
+                        dispatcher.dispatch_smart_money_alerts(detected_signals)
+                    )
+                finally:
+                    loop3.close()
     except Exception:
         logger.warning("Polymarket sync failed", exc_info=True)
     finally:
